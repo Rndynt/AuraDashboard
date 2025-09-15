@@ -1,15 +1,21 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '@acme/db/src/connection';
-import { env } from '@acme/core';
+import * as schema from '@acme/db';
+
+// Get environment variables directly
+const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || 'd5f4e3c2b1a09876543210fedcba9876543210123456789abcdef0123456789';
+const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || 'http://localhost:5000';
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5000'];
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
+    schema,
   }),
   
-  secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  secret: BETTER_AUTH_SECRET,
+  baseURL: BETTER_AUTH_URL,
   
   emailAndPassword: {
     enabled: true,
@@ -38,7 +44,7 @@ export const auth = betterAuth({
     max: 5, // 5 attempts per minute
   },
   
-  trustedOrigins: env.ALLOWED_ORIGINS,
+  trustedOrigins: ALLOWED_ORIGINS,
 });
 
 export type Session = typeof auth.$Infer.Session;

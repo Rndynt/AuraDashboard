@@ -8,9 +8,93 @@ import {
   memberships,
   auditLogs 
 } from './schema';
-import { env, logger } from '@acme/core';
-import { PERMISSIONS, DEFAULT_ROLES, ROLE_PERMISSIONS } from '@acme/rbac';
 import bcrypt from 'bcrypt';
+
+// Constants inline to avoid module resolution issues
+const PERMISSIONS = {
+  TENANT_CREATE: 'tenant.create',
+  TENANT_UPDATE: 'tenant.update', 
+  TENANT_DELETE: 'tenant.delete',
+  MEMBER_INVITE: 'member.invite',
+  MEMBER_MANAGE: 'member.manage',
+  MEMBER_VIEW: 'member.view',
+  ROLE_VIEW: 'role.view',
+  ROLE_MANAGE: 'role.manage',
+  AUDIT_VIEW: 'audit.view',
+  APIKEY_CREATE: 'apikey.create',
+  APIKEY_VIEW: 'apikey.view',
+  APIKEY_REVOKE: 'apikey.revoke',
+  PROFILE_VIEW: 'profile.view',
+  PROFILE_UPDATE: 'profile.update',
+  DASHBOARD_VIEW: 'dashboard.view',
+  DASHBOARD_SETTINGS_UPDATE: 'dashboard.settings.update',
+} as const;
+
+const DEFAULT_ROLES = {
+  OWNER: 'Owner',
+  ADMIN: 'Admin', 
+  MEMBER: 'Member',
+  VIEWER: 'Viewer',
+} as const;
+
+const ROLE_PERMISSIONS = {
+  [DEFAULT_ROLES.OWNER]: [
+    PERMISSIONS.TENANT_CREATE,
+    PERMISSIONS.TENANT_UPDATE,
+    PERMISSIONS.TENANT_DELETE,
+    PERMISSIONS.MEMBER_INVITE,
+    PERMISSIONS.MEMBER_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.ROLE_VIEW,
+    PERMISSIONS.ROLE_MANAGE,
+    PERMISSIONS.AUDIT_VIEW,
+    PERMISSIONS.APIKEY_CREATE,
+    PERMISSIONS.APIKEY_VIEW,
+    PERMISSIONS.APIKEY_REVOKE,
+    PERMISSIONS.PROFILE_VIEW,
+    PERMISSIONS.PROFILE_UPDATE,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.DASHBOARD_SETTINGS_UPDATE,
+  ],
+  [DEFAULT_ROLES.ADMIN]: [
+    PERMISSIONS.TENANT_UPDATE,
+    PERMISSIONS.MEMBER_INVITE,
+    PERMISSIONS.MEMBER_MANAGE,
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.ROLE_VIEW,
+    PERMISSIONS.AUDIT_VIEW,
+    PERMISSIONS.APIKEY_CREATE,
+    PERMISSIONS.APIKEY_VIEW,
+    PERMISSIONS.APIKEY_REVOKE,
+    PERMISSIONS.PROFILE_VIEW,
+    PERMISSIONS.PROFILE_UPDATE,
+    PERMISSIONS.DASHBOARD_VIEW,
+    PERMISSIONS.DASHBOARD_SETTINGS_UPDATE,
+  ],
+  [DEFAULT_ROLES.MEMBER]: [
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.PROFILE_VIEW,
+    PERMISSIONS.PROFILE_UPDATE,
+    PERMISSIONS.DASHBOARD_VIEW,
+  ],
+  [DEFAULT_ROLES.VIEWER]: [
+    PERMISSIONS.MEMBER_VIEW,
+    PERMISSIONS.PROFILE_VIEW,
+    PERMISSIONS.DASHBOARD_VIEW,
+  ],
+} as const;
+
+// Environment variables directly
+const env = {
+  SUPERUSER_EMAIL: process.env.SUPERUSER_EMAIL || 'admin@example.com',
+  SUPERUSER_NAME: process.env.SUPERUSER_NAME || 'Admin'
+};
+
+// Simple logger
+const logger = {
+  info: (msg: string, ...args: any[]) => console.log(`ℹ️  ${msg}`, ...args),
+  error: (msg: string, ...args: any[]) => console.error(`❌ ${msg}`, ...args)
+};
 
 async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 12);

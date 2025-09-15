@@ -1,3 +1,4 @@
-import { auth } from '@acme/auth/src/auth.js';
+import { auth } from '@acme/auth';
+import { toNextJsHandler } from 'better-auth/next-js';
 
-export const { GET, POST } = auth.handler;
+export const { GET, POST } = toNextJsHandler(auth.handler);
