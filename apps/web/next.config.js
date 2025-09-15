@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: ['@acme/core', '@acme/db', '@acme/auth', '@acme/rbac'],
+    serverComponentsExternalPackages: [],
   },
   transpilePackages: ['@acme/core', '@acme/db', '@acme/auth', '@acme/rbac', '@acme/ui'],
   async headers() {
