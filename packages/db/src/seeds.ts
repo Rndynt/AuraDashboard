@@ -1,6 +1,7 @@
 import { db } from './connection';
 import { 
   tenants, 
+  user,
   users, 
   roles, 
   permissions, 
@@ -8,6 +9,7 @@ import {
   memberships,
   auditLogs 
 } from './schema';
+import { isNull } from 'drizzle-orm';
 import bcrypt from 'bcrypt';
 
 // Constants inline to avoid module resolution issues
@@ -107,11 +109,10 @@ export async function seedDatabase() {
     // 1. Create superuser
     logger.info('Creating superuser...');
     const [superuser] = await db
-      .insert(users)
+      .insert(user)
       .values({
         email: env.SUPERUSER_EMAIL,
         name: env.SUPERUSER_NAME,
-        passwordHash: await hashPassword('superuser123!'),
         isSuperuser: true,
         emailVerified: true,
       })
@@ -159,12 +160,12 @@ export async function seedDatabase() {
     
     // Get all permissions and roles
     const allPermissions = await db.select().from(permissions);
-    const allRoles = await db.select().from(roles).where(roles.tenantId === null);
+    const allRoles = await db.select().from(roles).where(isNull(roles.tenantId));
 
     const permissionMap = new Map(allPermissions.map(p => [p.key, p.id]));
     const roleMap = new Map(allRoles.map(r => [r.name, r.id]));
 
-    const rolePermissionValues = [];
+    const rolePermissionValues: { roleId: string; permissionId: string; }[] = [];
     
     for (const [roleName, permissionKeys] of Object.entries(ROLE_PERMISSIONS)) {
       const roleId = roleMap.get(roleName);
@@ -217,7 +218,7 @@ export async function seedDatabase() {
 
       // Copy role-permission mappings for tenant-specific roles
       const materializedRoleMap = new Map(materializedRoles.map(r => [r.name, r.id]));
-      const tenantRolePermissionValues = [];
+      const tenantRolePermissionValues: { roleId: string; permissionId: string; }[] = [];
 
       for (const [roleName, permissionKeys] of Object.entries(ROLE_PERMISSIONS)) {
         const roleId = materializedRoleMap.get(roleName);
@@ -261,19 +262,17 @@ export async function seedDatabase() {
         {
           email: 'admin@acme.com',
           name: 'Admin User',
-          passwordHash: await hashPassword('admin123!'),
           emailVerified: true,
         },
         {
           email: 'member@acme.com',
           name: 'Member User',
-          passwordHash: await hashPassword('member123!'),
           emailVerified: true,
         },
       ];
 
       const createdUsers = await db
-        .insert(users)
+        .insert(user)
         .values(sampleUsers)
         .onConflictDoNothing()
         .returning();
