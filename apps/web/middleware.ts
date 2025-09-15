@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { authMiddleware } from '@acme/auth/src/middleware.js';
+import { authMiddleware } from '@acme/auth';
 
 export async function middleware(request: NextRequest) {
   // Apply auth middleware to all routes

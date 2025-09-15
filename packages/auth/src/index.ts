@@ -1,4 +1,4 @@
-export { auth } from './auth.js';
-export { authClient } from './client.js';
-export { authMiddleware } from './middleware.js';
-export type { Session, User } from './auth.js';
+export { auth } from './auth';
+export { authClient } from './client';
+export { authMiddleware } from './middleware';
+export type { Session, User } from './auth';
