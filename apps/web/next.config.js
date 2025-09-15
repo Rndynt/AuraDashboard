@@ -6,7 +6,7 @@ const nextConfig = {
   },
   // Allow cross-origin requests from Replit domain
   allowedDevOrigins: [
-    '6cd8617c-1c0e-4786-9645-9076a39bbd5a-00-3jl2n84nyk0jk.kirk.replit.dev',
+    '23215867-5b23-46d9-8169-919c4f040f73-00-2204r30y6j2vz.picard.replit.dev',
     'localhost:5000',
     '127.0.0.1:5000'
   ],
