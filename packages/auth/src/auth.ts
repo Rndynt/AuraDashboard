@@ -10,6 +10,7 @@ const BETTER_AUTH_SECRET =
 const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || "http://localhost:5000";
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || [
   "http://localhost:5000",
+  "https://6cd8617c-1c0e-4786-9645-9076a39bbd5a-00-3jl2n84nyk0jk.kirk.replit.dev",
 ];
 
 export const auth = betterAuth({

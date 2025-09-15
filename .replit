@@ -20,16 +20,16 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 36035
-externalPort = 3001
-
-[[ports]]
 localPort = 43853
 externalPort = 4200
 
 [[ports]]
 localPort = 44759
 externalPort = 3000
+
+[[ports]]
+localPort = 45461
+externalPort = 3001
 
 [[ports]]
 localPort = 45901
@@ -55,10 +55,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Next.js App"
+args = "Dashboard Starter Kit"
 
 [[workflows.workflow]]
-name = "Next.js App"
+name = "Dashboard Starter Kit"
 author = "agent"
 
 [[workflows.workflow.tasks]]

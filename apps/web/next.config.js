@@ -4,6 +4,12 @@ const nextConfig = {
     serverComponentsExternalPackages: [],
     allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
+  // Allow cross-origin requests from Replit domain
+  allowedDevOrigins: [
+    '6cd8617c-1c0e-4786-9645-9076a39bbd5a-00-3jl2n84nyk0jk.kirk.replit.dev',
+    'localhost:5000',
+    '127.0.0.1:5000'
+  ],
   // Allow cross-origin requests from Replit domains in development
   ...(process.env.NODE_ENV === 'development' && {
     devIndicators: {
