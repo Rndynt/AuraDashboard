@@ -1,0 +1,340 @@
+# Replit Agent — Enforce Full Spec (DDD, Multi-Tenant RLS, RBAC, better-auth)
+
+READ CAREFULLY AND FOLLOW EXACTLY. DO NOT “SIMPLIFY” OR DOWN-SCOPE.
+Do NOT use Replit Auth. MUST use better-auth per: https://www.better-auth.com/llms.txt
+If anything with Replit Auth already exists, refactor to better-auth now and delete all traces.
+
+0) NON-NEGOTIABLES
+- Do NOT use “Replit Auth” or built-in Replit authentication.
+- MUST use better-auth exactly as in llms.txt (integration + best practices).
+- Strict DDD modular monolith (domain / application / infrastructure / interface).
+- Multi-tenant with PostgreSQL RLS (no BYPASSRLS).
+- RBAC must be dynamic (no hardcoded permissions/roles).
+- Superuser has full access by TENANT CONTEXT SWITCH (RLS stays ON), never by bypassing RLS.
+- NO HARDCODE of tenant IDs, permission keys, domains, emails, origins, thresholds. All must be env/config/DB-driven, with tests enforcing this.
+- Complete docs & checklists in /docs and keep them auto-synced.
+
+1) MONOREPO LAYOUT (pnpm + Turborepo) — CREATE EXACTLY THIS
+apps/
+  web/                         (Next.js App Router, UI + API routes)
+  worker/                      (placeholder for jobs/outbox/cron)
+packages/
+  core/                        (error/result, env loader zod, logger pino, telemetry init, http utils)
+  db/                          (drizzle schema, migrations, seeds, test-helpers)
+  auth/                        (better-auth integration & session helpers; NO Replit Auth)
+  rbac/                        (policy engine, permission keys, server+client guards)
+  ui/                          (shadcn/ui, theme tokens, primitives)
+  config/                      (tsconfig, eslint, tailwind, turbo presets)
+  toolkit/                     (CLI: scaffold domain/usecase/repo/route/tests)
+modules/
+  dashboard/                   (built-in module: home, analytics stub, activity, settings, onboarding)
+    domain/ application/ infrastructure/ interface/
+  identity/                    (users, sessions)
+    domain/ application/ infrastructure/ interface/
+  tenancy/                     (tenants, memberships, invitations, api-keys)
+    domain/ application/ infrastructure/ interface/
+  authorization/               (roles, permissions, role-permissions, rbac)
+    domain/ application/ infrastructure/ interface/
+  audit/                       (audit logs)
+    domain/ application/ infrastructure/ interface/
+
+Dependency rule:
+domain (pure) <- application <- infrastructure <- interface.
+interface never touches DB directly; only calls application use-cases.
+
+Path aliases:
+@acme/core, @acme/db, @acme/auth, @acme/rbac, @acme/ui, @acme/modules/<name>/<layer>.
+
+2) NEXT.JS APP (apps/web)
+- App Router groups:
+  /auth/* (public) → login/register/reset (better-auth).
+  /(app)/:tenant/* (protected) → dashboard pages.
+  /api/* (JSON) → route handlers calling application layer.
+- Tenant resolver middleware (subdomain or /:tenant path) → set RequestContext via AsyncLocalStorage:
+  ctx.userId, ctx.tenantId, ctx.isSuperuser, ctx.permissions.
+- Security headers: CSP with nonce, HSTS, X-Frame-Options=DENY, Referrer-Policy=strict-origin-when-cross-origin, minimal CORS (env-driven).
+- Rate limiting (Redis) for /api/auth/* and admin endpoints.
+- UI shell (shadcn/ui): sidebar (RBAC-aware, no hardcode), topbar (tenant switcher + profile), breadcrumbs, dark/light theme.
+- Forms: React Hook Form + Zod.
+- Data: TanStack Query; route handlers return typed JSON.
+
+3) DATABASE & RLS (packages/db)
+Drizzle schemas (minimum):
+- tenants(id, slug UNIQUE, name, status, created_at)
+- users(id, email UNIQUE, name, password_hash, status, is_superuser BOOL, created_at)
+- memberships(id, user_id, tenant_id, role_id, status, created_at)
+- roles(id, tenant_id NULLABLE for global defaults, name, description)
+- permissions(id, key UNIQUE, description)
+- role_permissions(role_id, permission_id)
+- invitations(id, tenant_id, email, role_id, token UNIQUE, expires_at, invited_by)
+- api_keys(id, tenant_id, name, hash, scopes JSONB, last_used_at, created_at)
+- sessions(id, user_id, user_agent, ip, expires_at, created_at)
+- audit_logs(id, tenant_id, actor_user_id, action, resource, resource_id, meta JSONB, created_at)
+
+Indexes: composite (tenant_id, …) where relevant.
+
+RLS:
+- ENABLE ROW LEVEL SECURITY on all tenant-scoped tables.
+- Policies (apply via migration):
+  CREATE POLICY <table>_isolation_select ON <table> FOR SELECT USING (tenant_id = current_setting('app.tenant_id')::uuid);
+  CREATE POLICY <table>_isolation_write  ON <table> FOR ALL    USING (tenant_id = current_setting('app.tenant_id')::uuid) WITH CHECK (tenant_id = current_setting('app.tenant_id')::uuid);
+- App DB role must NOT have BYPASSRLS.
+- Provide a transaction helper that runs SET LOCAL app.tenant_id = $1 at start of each request/transaction.
+- Superuser still uses RLS: admin switches into any tenant context via UI; never disable RLS.
+
+4) AUTH (packages/auth) — better-auth ONLY
+- Implement better-auth per https://www.better-auth.com/llms.txt:
+  Register, Login, Logout, Password reset (request/confirm), httpOnly session cookies, refresh rotation.
+  Brute-force rate limiting on auth routes.
+- Seed superuser: users.is_superuser = true using env (SUPERUSER_EMAIL, SUPERUSER_NAME).
+- Expose helpers: getUserFromSession(), requireAuth(), isSuperuser(ctx).
+- Session/device management (list + revoke).
+- Hard prohibition: remove/forbid any package or code path referencing “Replit Auth”.
+  Add CI test that fails if the repo contains strings matching /replit.*auth/i.
+
+5) RBAC (packages/rbac + modules/authorization)
+- Permission keys: resource.action (e.g., member.invite).
+- Global role templates (tenant_id = NULL): Owner, Admin, Member, Viewer.
+- On tenant creation, materialize templates into tenant roles & role_permissions.
+- Server guard: checkPermission(userId, tenantId, permissionKey) → true if superuser.
+- Client guard: hide/disable UI actions/menus based on permissions. No hardcode.
+
+Create docs/permission_matrix.csv with:
+permission_key,description,roles_default
+tenant.create,Create tenant,"Owner"
+tenant.update,Update tenant,"Owner,Admin"
+tenant.delete,Delete tenant,"Owner"
+member.invite,Invite member,"Owner,Admin"
+member.manage,Add/Remove/Change roles,"Owner,Admin"
+member.view,View members,"Owner,Admin,Member,Viewer"
+role.view,View roles/permissions,"Owner,Admin"
+role.manage,Create/Update roles,"Owner"
+audit.view,View audit logs,"Owner,Admin"
+apikey.create,Create API keys,"Owner,Admin"
+apikey.view,View API keys,"Owner,Admin"
+apikey.revoke,Revoke API keys,"Owner,Admin"
+profile.view,View own profile,"Owner,Admin,Member,Viewer"
+profile.update,Update own profile,"Owner,Admin,Member,Viewer"
+dashboard.view,View dashboard module,"Owner,Admin,Member,Viewer"
+dashboard.settings.update,Update dashboard settings,"Owner,Admin"
+
+6) BUILT-IN DASHBOARD MODULE (modules/dashboard)
+- Pages: Home Overview (tenant info, member count), Analytics (stub) with cards/charts (fake data), Activity (reads audit_logs), Settings (theme/profile shortcuts; gated by dashboard.settings.update), Onboarding Checklist.
+- Gate via dashboard.view.
+- No hardcode: menu items & visibility derived from RBAC.
+
+7) SAMPLE USE CASES & ROUTES (must implement)
+Use cases (application layer):
+- tenancy/create-tenant
+- tenancy/invite-member
+- authorization/get-role-matrix
+- audit/list-audit-logs
+- dashboard/get-overview
+
+Route handlers under /api/*:
+- Auth: POST /api/auth/register, POST /api/auth/login, POST /api/auth/logout, POST /api/auth/reset-request, POST /api/auth/reset-confirm (better-auth flows).
+- Tenants: GET /api/tenants, POST /api/tenants, PATCH /api/tenants/:id, DELETE /api/tenants/:id
+- Members: GET /api/tenants/:id/members, POST /api/tenants/:id/invitations, POST /api/invitations/:token/accept, PATCH /api/tenants/:id/members/:memberId
+- RBAC: GET /api/roles, GET /api/permissions, GET /api/role-matrix
+- API Keys: POST /api/api-keys, GET /api/api-keys, DELETE /api/api-keys/:id
+- Audit: GET /api/audit (filters)
+- Dashboard: GET /api/dashboard/overview, GET /api/dashboard/activity, GET /api/dashboard/settings
+
+All handlers:
+- Zod validate input/output.
+- Enforce RBAC (except public auth).
+- Write audit logs on mutating actions.
+- Run inside a transaction that sets app.tenant_id.
+
+8) OBSERVABILITY & SECURITY
+- OpenTelemetry (HTTP + Drizzle/pg), trace IDs in logs (pino).
+- Sentry in frontend & backend.
+- Idempotency middleware for critical POSTs (header: Idempotency-Key).
+- PII redaction; never log secrets/tokens.
+
+9) TOOLKIT CLI (packages/toolkit)
+- Command: pnpm gen:domain <name> scaffolds all 4 layers (+ example use case, tests).
+- Generated code must import shared helpers, never hardcode tenant/permissions.
+
+10) TESTING
+- Unit (vitest): domain rules, value objects, use-cases.
+- Integration (vitest + testcontainers): Drizzle repositories against Postgres.
+- RLS tests: cross-tenant reads/writes denied on each tenant table; tenant_id from client payload is ignored/rejected.
+- E2E (Playwright):
+  register/login (better-auth), create tenant, invite member, switch tenant,
+  RBAC deny for Member, superuser can switch to any tenant and access all pages (RLS still on).
+- No-Hardcode tests:
+  fail if repo contains “replit” + “auth” (case-insensitive),
+  fail if code references permission keys not present in DB,
+  fail if tenant_id is accepted from client JSON for writes.
+- Coverage thresholds: statements ≥ 80%, branches ≥ 75%.
+
+11) CI (GitHub Actions)
+Jobs:
+- lint, typecheck
+- test:unit
+- test:int (Postgres service or testcontainers)
+- test:e2e (optional by label)
+- build
+- migrate:dry-run (drizzle)
+- docs:sync (run pnpm docs:sync) and FAIL on drift
+- artifact upload (dist, migration reports)
+
+12) DOCS & AUTO-SYNC
+Create /docs:
+- architecture_overview.md (DDD layers, module boundaries, request/tenant flow diagram)
+- rls_checklist.md (use checklist below)
+- security_checklist.md (CSP, headers, rate limit, secrets, PII/logging)
+- features_checklist.md (use list below)
+- qa_release_checklist.md (use list below)
+- adr/ADR-TEMPLATE.md + filled ADRs:
+  ADR-001 Modular Monolith DDD
+  ADR-002 RLS Single-DB (vs schema-per-tenant)
+  ADR-003 Next.js App Router + Route Handlers
+  ADR-004 RBAC via Permission Keys
+  ADR-005 OpenTelemetry + Sentry
+
+Docs auto-sync:
+- Add docs/sync.ts that regenerates:
+  features_checklist.md from current routes/permissions/modules,
+  rls_checklist.md listing tenant tables from Drizzle schemas.
+- Script pnpm docs:sync and run it in CI (fail on drift).
+
+Permission matrix: create docs/permission_matrix.csv with the exact content specified above.
+
+13) CHECKLISTS (create exactly these files and content)
+
+File: docs/rls_checklist.md
+# RLS Checklist
+Preparation
+- [ ] All tenant data tables have tenant_id UUID NOT NULL + composite indexes.
+- [ ] App DB role does NOT have BYPASSRLS.
+Activation
+- [ ] RLS ENABLED on all tenant-scoped tables.
+- [ ] Policies:
+  - [ ] SELECT uses current_setting('app.tenant_id')::uuid.
+  - [ ] WRITE (INSERT/UPDATE/DELETE) WITH CHECK uses same expression.
+- [ ] Transaction helper sets SET LOCAL app.tenant_id = <tenant> per request.
+App Guards
+- [ ] Middleware resolves tenant; AsyncLocalStorage sets ctx.tenantId.
+- [ ] Repo layer never accepts tenant_id from client; uses ctx only.
+- [ ] Superuser does NOT bypass RLS; uses tenant switch to assume context.
+- [ ] Tests cover cross-tenant access denial for each table.
+Audit & Monitoring
+- [ ] Audit logs record tenant_id, actor_user_id, action, resource_id.
+- [ ] Alerts for queries without app.tenant_id set.
+
+File: docs/features_checklist.md
+# Features Implementation Checklist
+Foundation
+- [ ] Monorepo (pnpm + turbo)
+- [ ] Base configs (tsconfig, eslint, prettier, husky, lint-staged)
+- [ ] Core (env zod, logger, errors, result, telemetry)
+- [ ] UI shell (shadcn/ui, theme, sidebar/topbar/breadcrumbs)
+Database & Seeds
+- [ ] Drizzle schemas + migrations
+- [ ] Seeds: superuser (env), default roles/permissions, sample tenant, memberships
+- [ ] Indexes for tenant_id and common filters
+Auth (better-auth)
+- [ ] Register/Login/Logout/Reset via better-auth
+- [ ] httpOnly sessions + refresh rotation
+- [ ] Brute-force rate limit
+- [ ] Session/device management
+Multi-Tenancy & RLS
+- [ ] Tenant resolver middleware
+- [ ] Tx helper sets app.tenant_id
+- [ ] RLS policies on all tenant tables
+- [ ] Isolation tests pass
+RBAC
+- [ ] Permission matrix applied
+- [ ] Role templates materialized per tenant
+- [ ] Server & client guards wired
+Modules
+- [ ] Dashboard (home/analytics stub/activity/settings/onboarding)
+- [ ] Identity (profile, sessions view/revoke)
+- [ ] Tenancy (tenant CRUD, invite, member mgmt, API keys)
+- [ ] Authorization (roles/permissions view; edit v0.2)
+- [ ] Audit (list/filter)
+API & Interface
+- [ ] Route handlers → application use-cases (Zod, audit, idempotency)
+Observability & Security
+- [ ] OTel HTTP & DB + Sentry
+- [ ] Security headers (CSP nonce, HSTS, etc.)
+- [ ] Rate limiting (per IP & tenant)
+- [ ] PII redaction
+Testing & CI
+- [ ] Unit/Integration/E2E
+- [ ] No-Hardcode tests (reject Replit Auth; permission & tenant checks)
+- [ ] Coverage thresholds met
+- [ ] CI pipeline green
+- [ ] docs:sync passes (no drift)
+Docs
+- [ ] Architecture Overview
+- [ ] RLS Checklist
+- [ ] Security Checklist
+- [ ] Features Checklist
+- [ ] QA Release Checklist
+- [ ] ADRs 001–005
+- [ ] README Getting Started
+
+File: docs/qa_release_checklist.md
+# QA Release Checklist
+- [ ] .env.example complete & documented
+- [ ] pnpm i && pnpm migrate:push && pnpm seed && pnpm dev works
+- [ ] Superuser can switch tenants and access all pages
+- [ ] Non-superuser blocked from other tenants' data
+- [ ] RBAC hides forbidden menus and blocks API calls
+- [ ] RLS tests pass for every table
+- [ ] Security headers verified in responses
+- [ ] Rate limiting triggers on abuse
+- [ ] Telemetry & Sentry receiving events
+- [ ] ADRs up-to-date; pnpm docs:sync shows no drift
+
+14) SCRIPTS & ENV
+Root package.json scripts:
+dev -> turbo run dev --parallel
+build -> turbo run build
+lint -> turbo run lint
+typecheck -> turbo run typecheck
+test -> turbo run test
+test:unit -> turbo run test --filter=unit
+test:int -> turbo run test --filter=integration
+test:e2e -> turbo run test --filter=e2e
+migrate:generate -> pnpm -C packages/db drizzle-kit generate
+migrate:push -> pnpm -C packages/db drizzle-kit push
+seed -> tsx packages/db/seed.ts
+docs:sync -> tsx docs/sync.ts
+
+.env.example must include:
+DATABASE_URL=
+SESSION_SECRET=
+REDIS_URL=
+SENTRY_DSN=
+OTEL_EXPORTER_OTLP_ENDPOINT=
+SUPERUSER_EMAIL=
+SUPERUSER_NAME=
+CORS_ALLOWED_ORIGINS=
+
+15) FINAL VERIFICATION & OUTPUT
+Run locally:
+pnpm i
+pnpm migrate:push
+pnpm seed
+pnpm dev
+pnpm test
+pnpm docs:sync
+
+Create COMPLIANCE REPORT and append to README.md with:
+- Tree of top-level folders
+- List of implemented routes
+- Migrations applied
+- How to switch tenants in UI
+- Proofs:
+  - better-auth is used (files/modules)
+  - no “replit auth” strings present (show grep result)
+  - RLS policies created (show migration snippets)
+  - CI status summary
+
+Do NOT end with “Send a message to revise the plan.”
+End with exactly:
+All specifications implemented. See COMPLIANCE REPORT in README.
