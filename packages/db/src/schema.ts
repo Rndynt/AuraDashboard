@@ -112,7 +112,7 @@ export const apiKeys = pgTable('api_keys', {
 
 export const sessions = pgTable('sessions', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
-  userId: uuid('user_id').notNull(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   token: text('token').notNull().unique(),
   userAgent: text('user_agent'),
   ipAddress: varchar('ip_address', { length: 45 }),
@@ -126,7 +126,7 @@ export const sessions = pgTable('sessions', {
 
 export const accounts = pgTable('accounts', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
-  userId: uuid('user_id').notNull(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
   accessToken: text('access_token'),
@@ -155,8 +155,8 @@ export const verifications = pgTable('verifications', {
 
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
-  tenantId: uuid('tenant_id'),
-  actorUserId: uuid('actor_user_id'),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'cascade' }),
+  actorUserId: uuid('actor_user_id').references(() => users.id),
   action: varchar('action', { length: 100 }).notNull(),
   resource: varchar('resource', { length: 100 }).notNull(),
   resourceId: uuid('resource_id'),
@@ -177,21 +177,35 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   roles: many(roles),
   invitations: many(invitations),
   apiKeys: many(apiKeys),
-  auditLogs: many(auditLogs),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(memberships),
-  sessions: many(sessions),
-  accounts: many(accounts),
   invitationsSent: many(invitations),
   apiKeysCreated: many(apiKeys),
-  auditLogs: many(auditLogs),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
   user: one(users, {
     fields: [accounts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [auditLogs.tenantId],
+    references: [tenants.id],
+  }),
+  actor: one(users, {
+    fields: [auditLogs.actorUserId],
     references: [users.id],
   }),
 }));
