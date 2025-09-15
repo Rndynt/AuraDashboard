@@ -21,6 +21,8 @@ export const auth = betterAuth({
   secret: BETTER_AUTH_SECRET,
   baseURL: BETTER_AUTH_URL,
 
+
+
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,

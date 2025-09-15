@@ -7,10 +7,11 @@ import {
   permissions, 
   rolePermissions, 
   memberships,
-  auditLogs 
+  auditLogs,
+  account 
 } from './schema';
 import { isNull, eq } from 'drizzle-orm';
-import { auth } from '../../auth/src/auth';
+import bcrypt from 'bcryptjs';
 
 // Constants inline to avoid module resolution issues
 const PERMISSIONS = {
@@ -99,51 +100,52 @@ const logger = {
 };
 
 // Helper function to create users with better-auth
-async function createUserWithAuth(email: string, name: string, password: string, isSuperuser = false) {
+async function upsertUserWithPassword(email: string, name: string, password: string, isSuperuser = false) {
   try {
-    // Use better-auth to create user with password
-    const result = await auth.api.signUpEmail({
-      body: {
-        email,
-        name,
-        password,
-      },
-    });
-
-    if (result?.user) {
-      // Update user with additional fields if needed
-      if (isSuperuser) {
-        await db
-          .update(user)
-          .set({ 
-            isSuperuser: true,
-            emailVerified: true 
-          })
-          .where(eq(user.id, result.user.id));
-      } else {
-        await db
-          .update(user)
-          .set({ emailVerified: true })
-          .where(eq(user.id, result.user.id));
-      }
-
-      // Fetch the updated user
-      const [updatedUser] = await db
-        .select()
-        .from(user)
-        .where(eq(user.id, result.user.id));
-
-      return updatedUser;
-    }
-    return null;
-  } catch (error) {
-    // User might already exist, try to find them
-    const [existingUser] = await db
+    // Check if user already exists
+    let [existingUser] = await db
       .select()
       .from(user)
       .where(eq(user.email, email));
-    
-    return existingUser || null;
+
+    if (existingUser) {
+      logger.info(`User already exists: ${email}`);
+      return existingUser;
+    }
+
+    // Create user directly with Drizzle (database will generate UUID)
+    const [createdUser] = await db
+      .insert(user)
+      .values({
+        email,
+        name,
+        emailVerified: true,
+        isSuperuser,
+        status: 'active',
+      })
+      .returning();
+
+    logger.info(`Created user: ${email} with ID: ${createdUser.id}`);
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create account entry for email/password authentication
+    await db
+      .insert(account)
+      .values({
+        userId: createdUser.id,
+        accountId: email, // For email/password, accountId is typically the email
+        providerId: 'credential', // Provider ID for email/password authentication
+        password: hashedPassword,
+      })
+      .onConflictDoNothing();
+
+    logger.info(`Created account for user: ${email}`);
+    return createdUser;
+  } catch (error) {
+    logger.error(`Failed to create user ${email}:`, error);
+    return null;
   }
 }
 
@@ -153,7 +155,7 @@ export async function seedDatabase() {
   try {
     // 1. Create superuser with better-auth
     logger.info('Creating superuser with credentials...');
-    const superuser = await createUserWithAuth(
+    const superuser = await upsertUserWithPassword(
       env.SUPERUSER_EMAIL,
       env.SUPERUSER_NAME,
       'superuser123!',
@@ -321,13 +323,13 @@ export async function seedDatabase() {
 
       // 8. Create sample users with better-auth
       logger.info('Creating sample users with credentials...');
-      const adminUser = await createUserWithAuth(
+      const adminUser = await upsertUserWithPassword(
         'admin@acme.com',
         'Admin User',
         'admin123!'
       );
 
-      const memberUser = await createUserWithAuth(
+      const memberUser = await upsertUserWithPassword(
         'member@acme.com',
         'Member User',
         'member123!'
@@ -339,7 +341,7 @@ export async function seedDatabase() {
       const adminRole = materializedRoles.find(r => r.name === DEFAULT_ROLES.ADMIN);
       const memberRole = materializedRoles.find(r => r.name === DEFAULT_ROLES.MEMBER);
 
-      if (createdUsers.length > 0 && adminRole && memberRole) {
+      if (createdUsers.length >= 2 && adminRole && memberRole && createdUsers[0] && createdUsers[1]) {
         const membershipValues = [
           {
             userId: createdUsers[0].id,
