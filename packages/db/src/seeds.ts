@@ -9,8 +9,8 @@ import {
   memberships,
   auditLogs 
 } from './schema';
-import { isNull } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
+import { isNull, eq } from 'drizzle-orm';
+import { auth } from '../../auth/src/auth';
 
 // Constants inline to avoid module resolution issues
 const PERMISSIONS = {
@@ -98,31 +98,73 @@ const logger = {
   error: (msg: string, ...args: any[]) => console.error(`❌ ${msg}`, ...args)
 };
 
-async function hashPassword(password: string): Promise<string> {
-  return await bcrypt.hash(password, 12);
+// Helper function to create users with better-auth
+async function createUserWithAuth(email: string, name: string, password: string, isSuperuser = false) {
+  try {
+    // Use better-auth to create user with password
+    const result = await auth.api.signUpEmail({
+      body: {
+        email,
+        name,
+        password,
+      },
+    });
+
+    if (result?.user) {
+      // Update user with additional fields if needed
+      if (isSuperuser) {
+        await db
+          .update(user)
+          .set({ 
+            isSuperuser: true,
+            emailVerified: true 
+          })
+          .where(eq(user.id, result.user.id));
+      } else {
+        await db
+          .update(user)
+          .set({ emailVerified: true })
+          .where(eq(user.id, result.user.id));
+      }
+
+      // Fetch the updated user
+      const [updatedUser] = await db
+        .select()
+        .from(user)
+        .where(eq(user.id, result.user.id));
+
+      return updatedUser;
+    }
+    return null;
+  } catch (error) {
+    // User might already exist, try to find them
+    const [existingUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, email));
+    
+    return existingUser || null;
+  }
 }
 
 export async function seedDatabase() {
   logger.info('Starting database seeding...');
 
   try {
-    // 1. Create superuser
-    logger.info('Creating superuser...');
-    const [superuser] = await db
-      .insert(user)
-      .values({
-        email: env.SUPERUSER_EMAIL,
-        name: env.SUPERUSER_NAME,
-        isSuperuser: true,
-        emailVerified: true,
-      })
-      .onConflictDoNothing()
-      .returning();
+    // 1. Create superuser with better-auth
+    logger.info('Creating superuser with credentials...');
+    const superuser = await createUserWithAuth(
+      env.SUPERUSER_EMAIL,
+      env.SUPERUSER_NAME,
+      'superuser123!',
+      true
+    );
 
     if (superuser) {
       logger.info(`Superuser created: ${superuser.email}`);
     } else {
-      logger.info('Superuser already exists');
+      logger.error('Failed to create superuser');
+      throw new Error('Failed to create superuser');
     }
 
     // 2. Ensure all permissions exist
@@ -189,9 +231,9 @@ export async function seedDatabase() {
 
     logger.info(`Assigned ${rolePermissionValues.length} permission-role mappings`);
 
-    // 5. Create sample tenant
+    // 5. Create or get sample tenant
     logger.info('Creating sample tenant...');
-    const [sampleTenant] = await db
+    let [sampleTenant] = await db
       .insert(tenants)
       .values({
         slug: 'acme-corp',
@@ -201,20 +243,39 @@ export async function seedDatabase() {
       .onConflictDoNothing()
       .returning();
 
-    if (sampleTenant) {
+    // If tenant already exists, get it
+    if (!sampleTenant) {
+      [sampleTenant] = await db
+        .select()
+        .from(tenants)
+        .where(eq(tenants.slug, 'acme-corp'));
+      logger.info('Using existing sample tenant: acme-corp');
+    } else {
       logger.info(`Sample tenant created: ${sampleTenant.slug}`);
+    }
 
-      // 6. Materialize roles for the sample tenant
+    if (sampleTenant) {
+      // 6. Materialize roles for the sample tenant (if not already done)
       logger.info('Materializing roles for sample tenant...');
       const tenantRoles = roleValues.map(role => ({
         ...role,
         tenantId: sampleTenant.id,
       }));
 
-      const materializedRoles = await db
+      let materializedRoles = await db
         .insert(roles)
         .values(tenantRoles)
+        .onConflictDoNothing()
         .returning();
+
+      // If roles already exist, get them
+      if (materializedRoles.length === 0) {
+        materializedRoles = await db
+          .select()
+          .from(roles)
+          .where(eq(roles.tenantId, sampleTenant.id));
+        logger.info('Using existing tenant roles');
+      }
 
       // Copy role-permission mappings for tenant-specific roles
       const materializedRoleMap = new Map(materializedRoles.map(r => [r.name, r.id]));
@@ -235,10 +296,12 @@ export async function seedDatabase() {
         }
       }
 
-      await db
-        .insert(rolePermissions)
-        .values(tenantRolePermissionValues)
-        .onConflictDoNothing();
+      if (tenantRolePermissionValues.length > 0) {
+        await db
+          .insert(rolePermissions)
+          .values(tenantRolePermissionValues)
+          .onConflictDoNothing();
+      }
 
       // 7. Create superuser membership in sample tenant
       const ownerRole = materializedRoles.find(r => r.name === DEFAULT_ROLES.OWNER);
@@ -256,26 +319,21 @@ export async function seedDatabase() {
         logger.info('Superuser membership created in sample tenant');
       }
 
-      // 8. Create sample users
-      logger.info('Creating sample users...');
-      const sampleUsers = [
-        {
-          email: 'admin@acme.com',
-          name: 'Admin User',
-          emailVerified: true,
-        },
-        {
-          email: 'member@acme.com',
-          name: 'Member User',
-          emailVerified: true,
-        },
-      ];
+      // 8. Create sample users with better-auth
+      logger.info('Creating sample users with credentials...');
+      const adminUser = await createUserWithAuth(
+        'admin@acme.com',
+        'Admin User',
+        'admin123!'
+      );
 
-      const createdUsers = await db
-        .insert(user)
-        .values(sampleUsers)
-        .onConflictDoNothing()
-        .returning();
+      const memberUser = await createUserWithAuth(
+        'member@acme.com',
+        'Member User',
+        'member123!'
+      );
+
+      const createdUsers = [adminUser, memberUser].filter(Boolean);
 
       // Create memberships for sample users
       const adminRole = materializedRoles.find(r => r.name === DEFAULT_ROLES.ADMIN);
