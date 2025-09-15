@@ -5,19 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authClient } from '@acme/auth/src/client.js';
-import { insertUserSchema } from '@acme/db/src/schema.js';
+import { authClient } from '@acme/auth/client';
+import { loginSchema, registerSchema, type LoginFormData, type RegisterFormData } from '@acme/db/client-schemas';
 import { ShieldCheck, Eye, EyeOff, Loader2 } from 'lucide-react';
 
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-const registerSchema = insertUserSchema;
-
-type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');

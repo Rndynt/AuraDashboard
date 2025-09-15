@@ -8,7 +8,7 @@ import {
 } from '@acme/db/src/schema.js';
 import { eq, count, desc, gte, sql } from 'drizzle-orm';
 import { DashboardOverview, ActivityItem } from '../domain/entities/dashboard.js';
-import { logger } from '@acme/core/src/logger.js';
+import { logger } from '@acme/core.js';
 
 export class DashboardRepository {
   async getDashboardOverview(tenantId: string): Promise<DashboardOverview> {

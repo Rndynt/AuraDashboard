@@ -1,9 +1,8 @@
-import { db } from '@acme/db/src/connection.js';
-import { memberships, roles, rolePermissions, permissions } from '@acme/db/src/schema.js';
+import { db } from '@acme/db/connection';
+import { memberships, roles, rolePermissions, permissions } from '@acme/db';
 import { eq, and } from 'drizzle-orm';
-import { getContext } from '@acme/core/src/context.js';
-import { AppError } from '@acme/core/src/errors.js';
-import type { PermissionKey } from './permissions.js';
+import { getContext, AppError } from '@acme/core';
+import type { PermissionKey } from './permissions';
 
 export async function checkPermission(
   userId: string,

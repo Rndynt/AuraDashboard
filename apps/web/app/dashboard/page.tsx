@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@acme/auth/src/auth.js';
+import { auth } from '@acme/auth';
 import { headers } from 'next/headers';
-import { db } from '@acme/db/src/connection.js';
-import { memberships, tenants } from '@acme/db/src/schema.js';
+import { db, memberships, tenants } from '@acme/db';
 import { eq } from 'drizzle-orm';
 
 export default async function DashboardRedirectPage() {

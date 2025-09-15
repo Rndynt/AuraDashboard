@@ -1,5 +1,5 @@
-import { env } from './env.js';
-import { logger } from './logger.js';
+import { env } from './env';
+import { logger } from './logger';
 
 export function initTelemetry() {
   if (env.NODE_ENV === 'production') {

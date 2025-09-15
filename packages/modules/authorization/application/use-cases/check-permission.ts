@@ -1,7 +1,7 @@
 import { Role, PermissionSet } from '../domain/entities/role.js';
 import { RoleRepository } from '../infrastructure/repositories/role-repository.js';
-import { Result, success, failure, AppError } from '@acme/core/src/errors.js';
-import { logger } from '@acme/core/src/logger.js';
+import { Result, success, failure, AppError } from '@acme/core.js';
+import { logger } from '@acme/core.js';
 
 export interface CheckPermissionRequest {
   userId: string;

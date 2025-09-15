@@ -4,8 +4,8 @@ import { getUserPermissions } from '@acme/rbac/src/guards.js';
 import { PERMISSIONS } from '@acme/rbac/src/permissions.js';
 import { GetDashboardOverviewUseCase } from '../application/use-cases/get-overview.js';
 import { DashboardRepository } from '../infrastructure/repositories/dashboard-repository.js';
-import { AppError } from '@acme/core/src/errors.js';
-import { logger } from '@acme/core/src/logger.js';
+import { AppError } from '@acme/core.js';
+import { logger } from '@acme/core.js';
 
 const dashboardRepository = new DashboardRepository();
 const getDashboardOverviewUseCase = new GetDashboardOverviewUseCase(dashboardRepository);

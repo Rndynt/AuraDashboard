@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from './auth';
-import { setContext, type RequestContext } from '@acme/core/src/context';
-import { logger } from '@acme/core/src/logger';
+import { setContext, logger, type RequestContext } from '@acme/core';
 
 export async function authMiddleware(request: NextRequest) {
   try {

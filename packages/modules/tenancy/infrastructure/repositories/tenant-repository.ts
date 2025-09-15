@@ -2,7 +2,7 @@ import { db } from '@acme/db/src/connection.js';
 import { tenants, insertTenantSchema } from '@acme/db/src/schema.js';
 import { eq } from 'drizzle-orm';
 import { Tenant, TenantData } from '../domain/entities/tenant.js';
-import { AppError } from '@acme/core/src/errors.js';
+import { AppError } from '@acme/core.js';
 
 export interface CreateTenantData {
   name: string;

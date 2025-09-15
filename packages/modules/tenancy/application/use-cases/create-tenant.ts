@@ -1,7 +1,7 @@
 import { Tenant } from '../domain/entities/tenant.js';
 import { TenantRepository } from '../infrastructure/repositories/tenant-repository.js';
-import { Result, success, failure, AppError } from '@acme/core/src/errors.js';
-import { logger } from '@acme/core/src/logger.js';
+import { Result, success, failure, AppError } from '@acme/core.js';
+import { logger } from '@acme/core.js';
 
 export interface CreateTenantRequest {
   name: string;

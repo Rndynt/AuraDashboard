@@ -1,5 +1,5 @@
-export { Sidebar } from './components/sidebar.js';
-export { Header } from './components/header.js';
-export { ProtectedRoute } from './components/protected-route.js';
-export { TenantSwitcher } from './components/tenant-switcher.js';
-export { cn } from './utils.js';
+export { Sidebar } from './components/sidebar';
+export { Header } from './components/header';
+export { ProtectedRoute } from './components/protected-route';
+export { TenantSwitcher } from './components/tenant-switcher';
+export { cn } from './utils';

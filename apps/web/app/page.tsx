@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { auth } from '@acme/auth/src/auth.js';
+import { auth } from '@acme/auth';
 import { headers } from 'next/headers';
 
 export default async function HomePage() {

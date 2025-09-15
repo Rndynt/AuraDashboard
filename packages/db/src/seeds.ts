@@ -1,4 +1,4 @@
-import { db } from './connection.js';
+import { db } from './connection';
 import { 
   tenants, 
   users, 
@@ -7,10 +7,9 @@ import {
   rolePermissions, 
   memberships,
   auditLogs 
-} from './schema.js';
-import { env } from '@acme/core/src/env.js';
-import { logger } from '@acme/core/src/logger.js';
-import { PERMISSIONS, DEFAULT_ROLES, ROLE_PERMISSIONS } from '@acme/rbac/src/permissions.js';
+} from './schema';
+import { env, logger } from '@acme/core';
+import { PERMISSIONS, DEFAULT_ROLES, ROLE_PERMISSIONS } from '@acme/rbac';
 import bcrypt from 'bcrypt';
 
 async function hashPassword(password: string): Promise<string> {

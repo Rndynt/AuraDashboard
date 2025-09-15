@@ -1,3 +1,3 @@
-export { PERMISSIONS, DEFAULT_ROLES, ROLE_PERMISSIONS } from './permissions.js';
-export { checkPermission, requirePermission, getUserPermissions } from './guards.js';
-export type { PermissionKey, AuthorizedUser, TenantContext } from './types.js';
+export { PERMISSIONS, DEFAULT_ROLES, ROLE_PERMISSIONS } from './permissions';
+export { checkPermission, requirePermission, getUserPermissions } from './guards';
+export type { PermissionKey, AuthorizedUser, TenantContext } from './types';

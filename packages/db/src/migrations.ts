@@ -1,8 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
-import { env } from '@acme/core/src/env.js';
-import { logger } from '@acme/core/src/logger.js';
+import { env, logger } from '@acme/core';
 
 export async function runMigrations() {
   logger.info('Starting database migrations...');
