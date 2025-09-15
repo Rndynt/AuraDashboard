@@ -1,0 +1,17 @@
+{
+  "name": "@acme/auth",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "better-auth": "^0.7.0",
+    "better-auth/adapters/drizzle": "^0.7.0",
+    "better-auth/client": "^0.7.0",
+    "@acme/core": "workspace:*",
+    "@acme/db": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,17 @@
+permission_key,description,roles_default
+tenant.create,Create tenant,Owner
+tenant.update,Update tenant,"Owner,Admin"
+tenant.delete,Delete tenant,Owner
+member.invite,Invite member,"Owner,Admin"
+member.manage,Add/Remove/Change roles,"Owner,Admin"
+member.view,View members,"Owner,Admin,Member,Viewer"
+role.view,View roles/permissions,"Owner,Admin"
+role.manage,Create/Update roles,Owner
+audit.view,View audit logs,"Owner,Admin"
+apikey.create,Create API keys,"Owner,Admin"
+apikey.view,View API keys,"Owner,Admin"
+apikey.revoke,Revoke API keys,"Owner,Admin"
+profile.view,View own profile,"Owner,Admin,Member,Viewer"
+profile.update,Update own profile,"Owner,Admin,Member,Viewer"
+dashboard.view,View dashboard module,"Owner,Admin,Member,Viewer"
+dashboard.settings.update,Update dashboard settings,"Owner,Admin"
