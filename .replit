@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web", "bash", "postgresql-16"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
@@ -8,8 +8,8 @@ packages = ["nmh"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["pnpm", "build", "--filter", "@acme/web"]
-run = ["pnpm", "start", "--filter", "@acme/web"]
+build = ["pnpm", "build"]
+run = ["pnpm", "start"]
 
 [[ports]]
 localPort = 3000
@@ -57,10 +57,10 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"

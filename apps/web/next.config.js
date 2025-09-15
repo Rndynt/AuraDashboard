@@ -14,6 +14,8 @@ const nextConfig = {
       allowedRevalidateHeaderKeys: ['x-revalidate'],
     },
   }),
+  // Allow cross-origin requests from Replit domains
+  allowedDevOrigins: process.env.NODE_ENV === 'development' ? ['*'] : [],
   async headers() {
     return [
       {
