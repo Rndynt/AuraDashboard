@@ -6,10 +6,12 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./connection": "./src/connection.ts",
     "./client-schemas": "./src/client-schemas.ts",
     "./src/connection": "./src/connection.ts",
     "./src/connection.js": "./src/connection.ts",
-    "./src/schema.js": "./src/schema.ts"
+    "./src/schema.js": "./src/schema.ts",
+    "./src/seeds": "./src/seeds.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
