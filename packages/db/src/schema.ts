@@ -118,9 +118,39 @@ export const sessions = pgTable('sessions', {
   ipAddress: varchar('ip_address', { length: 45 }),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   userIdx: index('sessions_user_idx').on(table.userId),
   tokenIdx: index('sessions_token_idx').on(table.token),
+}));
+
+export const accounts = pgTable('accounts', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  accountId: text('account_id').notNull(),
+  providerId: text('provider_id').notNull(),
+  accessToken: text('access_token'),
+  refreshToken: text('refresh_token'),
+  accessTokenExpiresAt: timestamp('access_token_expires_at'),
+  refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+  scope: text('scope'),
+  idToken: text('id_token'),
+  password: text('password'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index('accounts_user_idx').on(table.userId),
+}));
+
+export const verifications = pgTable('verifications', {
+  id: uuid('id').default(sql`gen_random_uuid()`).primaryKey(),
+  identifier: text('identifier').notNull(),
+  value: text('value').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  identifierIdx: index('verifications_identifier_idx').on(table.identifier),
 }));
 
 export const auditLogs = pgTable('audit_logs', {
@@ -153,9 +183,17 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(memberships),
   sessions: many(sessions),
+  accounts: many(accounts),
   invitationsSent: many(invitations),
   apiKeysCreated: many(apiKeys),
   auditLogs: many(auditLogs),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
 }));
 
 export const membershipsRelations = relations(memberships, ({ one }) => ({
@@ -261,6 +299,8 @@ export type RolePermission = typeof rolePermissions.$inferSelect;
 export type Invitation = typeof invitations.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type Session = typeof sessions.$inferSelect;
+export type Account = typeof accounts.$inferSelect;
+export type Verification = typeof verifications.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
 
 export type InsertTenant = z.infer<typeof insertTenantSchema>;

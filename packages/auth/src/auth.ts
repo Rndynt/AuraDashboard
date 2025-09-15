@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '@acme/db/src/connection';
-import * as schema from '@acme/db';
+import { db } from '../db/src/connection';
+import * as schema from '../db/src/schema';
 
 // Get environment variables directly
 const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || 'd5f4e3c2b1a09876543210fedcba9876543210123456789abcdef0123456789';
@@ -23,6 +23,7 @@ export const auth = betterAuth({
   },
   
   session: {
+    modelName: 'sessions',
     cookieCache: {
       enabled: true,
       maxAge: 60 * 60 * 24 * 7, // 7 days
@@ -30,12 +31,21 @@ export const auth = betterAuth({
   },
   
   user: {
+    modelName: 'users',
     additionalFields: {
       isSuperuser: {
         type: 'boolean',
         defaultValue: false,
       },
     },
+  },
+  
+  account: {
+    modelName: 'accounts',
+  },
+  
+  verification: {
+    modelName: 'verifications',
   },
   
   rateLimit: {
@@ -48,4 +58,4 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
-export type User = typeof auth.$Infer.User;
+export type AuthUser = typeof auth.$Infer.Session.user;

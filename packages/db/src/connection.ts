@@ -1,9 +1,12 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { sql } from 'drizzle-orm';
 import postgres from 'postgres';
-import { env } from '@acme/core';
 import * as schema from './schema';
 
-const client = postgres(env.DATABASE_URL, {
+// Use environment variables directly for now
+const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost:5432/mydb';
+
+const client = postgres(DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
@@ -12,7 +15,7 @@ const client = postgres(env.DATABASE_URL, {
 export const db = drizzle(client, { schema });
 
 export async function withTransaction<T>(
-  fn: (tx: typeof db) => Promise<T>,
+  fn: (tx: any) => Promise<T>,
   tenantId?: string
 ): Promise<T> {
   return await db.transaction(async (tx) => {
@@ -23,4 +26,4 @@ export async function withTransaction<T>(
   });
 }
 
-export { sql } from 'drizzle-orm';
+export { sql };
