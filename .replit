@@ -54,5 +54,5 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev"
+args = "pnpm --filter @acme/web dev"
 waitForPort = 3000
