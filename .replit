@@ -8,8 +8,8 @@ packages = ["nmh"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["pnpm", "build", "--filter", "@acme/web"]
+run = ["pnpm", "start", "--filter", "@acme/web"]
 
 [[ports]]
 localPort = 3000
@@ -18,10 +18,6 @@ externalPort = 3002
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 37827
-externalPort = 4200
 
 [[ports]]
 localPort = 42887
@@ -65,3 +61,6 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"

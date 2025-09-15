@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./src/auth.js": "./src/auth.ts"
   },
   "dependencies": {
     "better-auth": "^0.7.0",

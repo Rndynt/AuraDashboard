@@ -8,11 +8,11 @@ const nextConfig = {
   async rewrites() {
     return []
   },
-  // Disable hostname check for Replit
+  // Configure for Replit development environment
   ...(process.env.NODE_ENV === 'development' && {
     experimental: {
       allowedRevalidateHeaderKeys: ['x-revalidate'],
-    }
+    },
   }),
   async headers() {
     return [
