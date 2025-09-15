@@ -1,0 +1,30 @@
+POST /api/auth/sign-in/email?currentURL=https%3A%2F%2F7bc89f1b-b28b-4e82-bf09-b1868f8e0461-00-dc46nnvkhjqn.kirk.replit.dev%2Fauth 500 in 4850ms
+
+[Better Auth]  ERROR   Cannot read properties of undefined (reading 'length')
+
+    at decodeHex (webpack-internal:///(rsc)/../../node_modules/.pnpm/oslo@1.2.1/node_modules/oslo/dist/encoding/hex.js:43:39)
+    at Object.Vt [as verify] (webpack-internal:///(rsc)/../../node_modules/.pnpm/better-auth@0.7.5_react@18.3.1_solid-js@1.9.9_vue@3.5.21_typescript@5.6.3_/node_modules/better-auth/dist/index.js:121:17789)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async eval (webpack-internal:///(rsc)/../../node_modules/.pnpm/better-auth@0.7.5_react@18.3.1_solid-js@1.9.9_vue@3.5.21_typescript@5.6.3_/node_modules/better-auth/dist/index.js:40:24448)
+    at async handle (webpack-internal:///(rsc)/../../node_modules/.pnpm/better-call@0.2.14-beta.3/node_modules/better-call/dist/index.js:395:17)
+    at async a.<computed> (webpack-internal:///(rsc)/../../node_modules/.pnpm/better-auth@0.7.5_react@18.3.1_solid-js@1.9.9_vue@3.5.21_typescript@5.6.3_/node_modules/better-auth/dist/index.js:121:7821)
+    at async handler (webpack-internal:///(rsc)/../../node_modules/.pnpm/better-call@0.2.14-beta.3/node_modules/better-call/dist/index.js:611:26)
+    at async handler (webpack-internal:///(rsc)/../../node_modules/.pnpm/better-call@0.2.14-beta.3/node_modules/better-call/dist/index.js:662:19)
+    at async /home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228
+    at async eT.execute (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)
+    at async eT.handle (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58760)
+    at async doRender (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:1366:42)
+    at async cacheEntry.responseCache.get.routeKind (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:1576:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:1496:28)
+    at async DevServer.renderPageComponent (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:1962:32)
+    at async DevServer.pipeImpl (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:818:17)
+    at async /home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/router-server.js:179:21)
+    at async handleRequest (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/router-server.js:359:24)
+    at async requestHandlerImpl (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/router-server.js:383:13)
+    at async Server.requestListener (/home/runner/workspace/node_modules/.pnpm/next@14.2.32_@babel+core@7.28.4_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:141:13)
