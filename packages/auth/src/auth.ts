@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { db } from '../db/src/connection';
-import * as schema from '../db/src/schema';
+import { db } from '../../db/src/connection';
+import * as schema from '../../db/src/schema';
 
 // Get environment variables directly
 const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || 'd5f4e3c2b1a09876543210fedcba9876543210123456789abcdef0123456789';

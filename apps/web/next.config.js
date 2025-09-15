@@ -2,20 +2,19 @@
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: [],
+    allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
+  // Allow cross-origin requests from Replit domains in development
+  ...(process.env.NODE_ENV === 'development' && {
+    devIndicators: {
+      buildActivity: false,
+    },
+  }),
   transpilePackages: ['@acme/core', '@acme/db', '@acme/auth', '@acme/rbac', '@acme/ui'],
   // Allow all hosts for Replit proxy
   async rewrites() {
     return []
   },
-  // Configure for Replit development environment
-  ...(process.env.NODE_ENV === 'development' && {
-    experimental: {
-      allowedRevalidateHeaderKeys: ['x-revalidate'],
-    },
-  }),
-  // Allow cross-origin requests from Replit domains
-  allowedDevOrigins: process.env.NODE_ENV === 'development' ? ['*'] : [],
   async headers() {
     return [
       {
