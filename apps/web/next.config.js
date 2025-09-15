@@ -4,6 +4,16 @@ const nextConfig = {
     serverComponentsExternalPackages: [],
   },
   transpilePackages: ['@acme/core', '@acme/db', '@acme/auth', '@acme/rbac', '@acme/ui'],
+  // Allow all hosts for Replit proxy
+  async rewrites() {
+    return []
+  },
+  // Disable hostname check for Replit
+  ...(process.env.NODE_ENV === 'development' && {
+    experimental: {
+      allowedRevalidateHeaderKeys: ['x-revalidate'],
+    }
+  }),
   async headers() {
     return [
       {
