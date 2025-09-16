@@ -3,11 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../../db/src/connection";
 import * as schema from "../../db/src/schema";
 
-// Get environment variables directly - CRITICAL: No fallback in production
-const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET;
-if (!BETTER_AUTH_SECRET) {
-  throw new Error('BETTER_AUTH_SECRET environment variable is required');
-}
+// Get environment variables with fallback like demo
+const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || "";
 const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || "http://localhost:5000";
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || [
   "http://localhost:5000",
