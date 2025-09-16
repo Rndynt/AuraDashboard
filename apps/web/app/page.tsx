@@ -11,7 +11,7 @@ export default function HomePage() {
     const checkAuth = async () => {
       const session = await authClient.getSession();
       
-      if (!session.data?.user) {
+      if (!session?.user) {
         router.push('/auth');
       } else {
         router.push('/dashboard');

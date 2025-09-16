@@ -55,7 +55,7 @@ export default function AuthPage() {
         password: data.password,
       });
 
-      if (result.data) {
+      if (result.user) {
         router.push('/dashboard');
       } else {
         setError('Invalid email or password');
@@ -78,7 +78,7 @@ export default function AuthPage() {
         name: data.name,
       });
 
-      if (result.data) {
+      if (result.user) {
         router.push('/dashboard');
       } else {
         setError('Failed to create account');
