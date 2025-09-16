@@ -20,8 +20,12 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 39899
+localPort = 35115
 externalPort = 5000
+
+[[ports]]
+localPort = 37811
+externalPort = 5173
 
 [[ports]]
 localPort = 42395
@@ -59,10 +63,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Next.js Dashboard"
+args = "Next.js Frontend"
 
 [[workflows.workflow]]
-name = "Next.js Dashboard"
+name = "Next.js Frontend"
 author = "agent"
 
 [[workflows.workflow.tasks]]

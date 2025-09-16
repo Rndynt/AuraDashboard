@@ -4,9 +4,9 @@ const nextConfig = {
     serverComponentsExternalPackages: ['better-auth', '@oslojs/crypto', '@oslojs/encoding', '@oslojs/algorithm'],
     allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
-  // Allow cross-origin requests in development mode - disable for Replit
+  // Allow cross-origin requests in development mode for Replit
   ...(process.env.NODE_ENV === 'development' && {
-    // Don't specify allowedDevOrigins to allow all origins in dev mode
+    allowedDevOrigins: ['*'], // Allow all origins in development for Replit proxy
   }),
   // Allow cross-origin requests from Replit domains in development
   ...(process.env.NODE_ENV === 'development' && {
