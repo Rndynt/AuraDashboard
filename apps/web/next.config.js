@@ -4,16 +4,12 @@ const nextConfig = {
     serverComponentsExternalPackages: ['better-auth', '@oslojs/crypto', '@oslojs/encoding', '@oslojs/algorithm'],
     allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
-  // Allow cross-origin requests in development mode for Replit
-  ...(process.env.NODE_ENV === 'development' && {
-    allowedDevOrigins: ['*'], // Allow all origins in development for Replit proxy
-  }),
-  // Allow cross-origin requests from Replit domains in development
-  ...(process.env.NODE_ENV === 'development' && {
-    devIndicators: {
-      buildActivity: false,
-    },
-  }),
+  // Allow cross-origin requests from all origins in development for Replit proxy
+  allowedDevOrigins: process.env.NODE_ENV === 'development' ? ['*'] : undefined,
+  // Disable build activity indicator in development for Replit
+  devIndicators: process.env.NODE_ENV === 'development' ? {
+    buildActivity: false,
+  } : undefined,
   transpilePackages: ['@acme/core', '@acme/db', '@acme/auth', '@acme/rbac', '@acme/ui'],
   // Allow all hosts for Replit proxy
   async rewrites() {
