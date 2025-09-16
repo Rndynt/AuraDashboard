@@ -35,9 +35,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth', request.url));
   }
   
-  // If on auth page with valid session, redirect to dashboard
+  // If on auth page with valid session, redirect to default tenant dashboard
   if (sessionCookie && pathname === '/auth') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/acme-corp/dashboard', request.url));
   }
   
   return NextResponse.next();

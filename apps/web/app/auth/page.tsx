@@ -39,7 +39,7 @@ export default function AuthPage() {
     const checkAuth = async () => {
       const session = await authClient.getSession();
       if (session.data?.user) {
-        router.push('/dashboard');
+        router.push('/acme-corp/dashboard');
       }
     };
     checkAuth();
@@ -60,7 +60,7 @@ export default function AuthPage() {
       
       if (result.data?.user) {
         console.log('Login success, redirecting to dashboard');
-        router.push('/dashboard');
+        router.push('/acme-corp/dashboard');
       } else {
         console.log('Login failed - no user in result');
         setError('Invalid email or password');
@@ -85,7 +85,7 @@ export default function AuthPage() {
       });
 
       if (result.data?.user) {
-        router.push('/dashboard');
+        router.push('/acme-corp/dashboard');
       } else {
         setError('Failed to create account');
       }
