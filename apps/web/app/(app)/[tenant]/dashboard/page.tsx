@@ -89,15 +89,12 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           slug: tenant.slug,
         }}
         memberCount={dashboardData.memberCount}
-        onTenantSwitch={() => {}}
-        onProfileMenu={() => {}}
       />
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header 
           user={user}
           breadcrumbs={breadcrumbs}
-          onInviteMember={() => {}}
         />
         
         <div className="flex-1 overflow-auto p-6">

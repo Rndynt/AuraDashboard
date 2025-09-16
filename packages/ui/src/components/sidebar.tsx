@@ -27,8 +27,6 @@ interface SidebarProps {
     slug: string;
   };
   memberCount: number;
-  onTenantSwitch: () => void;
-  onProfileMenu: () => void;
 }
 
 interface NavItem {
@@ -39,8 +37,18 @@ interface NavItem {
   badge?: string | number;
 }
 
-export function Sidebar({ user, tenant, memberCount, onTenantSwitch, onProfileMenu }: SidebarProps) {
+export function Sidebar({ user, tenant, memberCount }: SidebarProps) {
   const [activeItem, setActiveItem] = useState('/dashboard');
+  
+  const handleTenantSwitch = () => {
+    // TODO: Implement tenant switching modal/dropdown
+    console.log('Tenant switch requested');
+  };
+
+  const handleProfileMenu = () => {
+    // TODO: Implement profile menu
+    console.log('Profile menu requested');
+  };
 
   const hasPermission = (permission?: string) => {
     if (!permission) return true;
@@ -161,7 +169,7 @@ export function Sidebar({ user, tenant, memberCount, onTenantSwitch, onProfileMe
       <div className="p-4 border-b border-border">
         <div className="relative">
           <button 
-            onClick={onTenantSwitch}
+            onClick={handleTenantSwitch}
             className="flex items-center justify-between w-full p-2 text-sm text-left bg-muted rounded-md hover:bg-secondary transition-colors"
           >
             <div className="flex items-center space-x-2">
@@ -233,7 +241,7 @@ export function Sidebar({ user, tenant, memberCount, onTenantSwitch, onProfileMe
             </p>
           </div>
           <button 
-            onClick={onProfileMenu}
+            onClick={handleProfileMenu}
             className="p-1 text-muted-foreground hover:text-foreground transition-colors"
           >
             <MoreHorizontal className="w-4 h-4" />

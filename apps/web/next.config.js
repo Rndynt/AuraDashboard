@@ -5,7 +5,12 @@ const nextConfig = {
     allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
   // Allow cross-origin requests from all origins in development for Replit proxy
-  allowedDevOrigins: process.env.NODE_ENV === 'development' ? ['*'] : undefined,
+  allowedDevOrigins: process.env.NODE_ENV === 'development' ? [
+    '*.replit.dev',
+    'localhost:*',
+    '127.0.0.1:*',
+    '*'
+  ] : [],
   // Disable build activity indicator in development for Replit
   devIndicators: process.env.NODE_ENV === 'development' ? {
     buildActivity: false,

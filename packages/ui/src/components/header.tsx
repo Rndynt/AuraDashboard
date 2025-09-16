@@ -9,11 +9,15 @@ import { PERMISSIONS } from '@acme/rbac/client';
 interface HeaderProps {
   user: AuthorizedUser;
   breadcrumbs?: Array<{ label: string; href?: string }>;
-  onInviteMember?: () => void;
 }
 
-export function Header({ user, breadcrumbs = [], onInviteMember }: HeaderProps) {
+export function Header({ user, breadcrumbs = [] }: HeaderProps) {
   const canInviteMembers = user.isSuperuser || user.permissions.includes(PERMISSIONS.MEMBER_INVITE);
+  
+  const handleInviteMember = () => {
+    // TODO: Implement member invitation modal/flow
+    console.log('Member invite requested');
+  };
 
   return (
     <header className="bg-card border-b border-border px-6 py-4">
@@ -58,7 +62,7 @@ export function Header({ user, breadcrumbs = [], onInviteMember }: HeaderProps) 
             <>
               <div className="w-px h-6 bg-border" />
               <button 
-                onClick={onInviteMember}
+                onClick={handleInviteMember}
                 className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary/90 transition-colors"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
