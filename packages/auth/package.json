@@ -10,7 +10,7 @@
     "./src/auth.js": "./src/auth.ts"
   },
   "dependencies": {
-    "better-auth": "^0.7.0",
+    "better-auth": "^1.3.9",
     "@acme/core": "workspace:*",
     "@acme/db": "workspace:*"
   },
