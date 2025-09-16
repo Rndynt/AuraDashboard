@@ -1,14 +1,14 @@
-import { db, withTransaction } from '@acme/db/src/connection.js';
+import { db, withTransaction } from '@acme/db/src/connection';
 import { 
   memberships, 
   auditLogs, 
   apiKeys, 
   sessions, 
   users 
-} from '@acme/db/src/schema.js';
-import { eq, count, desc, gte, sql } from 'drizzle-orm';
-import { DashboardOverview, ActivityItem } from '../domain/entities/dashboard.js';
-import { logger } from '@acme/core.js';
+} from '@acme/db/src/schema';
+import { eq, count, desc, gte, sql, and } from 'drizzle-orm';
+import { DashboardOverview, ActivityItem } from '../domain/entities/dashboard';
+import { logger } from '@acme/core';
 
 export class DashboardRepository {
   async getDashboardOverview(tenantId: string): Promise<DashboardOverview> {
@@ -28,8 +28,10 @@ export class DashboardRepository {
         .from(sessions)
         .innerJoin(memberships, eq(sessions.userId, memberships.userId))
         .where(
-          eq(memberships.tenantId, tenantId) &&
-          gte(sessions.expiresAt, new Date())
+          and(
+            eq(memberships.tenantId, tenantId),
+            gte(sessions.expiresAt, new Date())
+          )
         );
 
       // Get API keys count
@@ -64,8 +66,10 @@ export class DashboardRepository {
         })
         .from(auditLogs)
         .where(
-          eq(auditLogs.tenantId, tenantId) &&
-          gte(auditLogs.createdAt, thirtyDaysAgo)
+          and(
+            eq(auditLogs.tenantId, tenantId),
+            gte(auditLogs.createdAt, thirtyDaysAgo)
+          )
         );
 
       // Transform audit logs to activity items
