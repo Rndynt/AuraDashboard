@@ -27,7 +27,7 @@ export const auth = betterAuth({
   },
 
   session: {
-    modelName: "sessions",
+    modelName: "session",
     cookieCache: {
       enabled: true,
       maxAge: 60 * 60 * 24 * 7, // 7 days
@@ -35,7 +35,7 @@ export const auth = betterAuth({
   },
 
   user: {
-    modelName: "users",
+    modelName: "user",
     additionalFields: {
       isSuperuser: {
         type: "boolean",
@@ -45,11 +45,11 @@ export const auth = betterAuth({
   },
 
   account: {
-    modelName: "accounts",
+    modelName: "account",
   },
 
   verification: {
-    modelName: "verifications",
+    modelName: "verification",
   },
 
   rateLimit: {
