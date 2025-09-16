@@ -27,9 +27,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Convert Web Response back to Next.js response
     const data = await response.text();
     
-    // Handle Set-Cookie headers properly (multiple cookies can exist)
-    const cookies = response.headers.getSetCookie?.() || [];
-    if (cookies.length) {
+    // Handle Set-Cookie headers properly (multiple cookies can exist)  
+    // Use both getSetCookie() and manual header parsing for reliability
+    let cookies: string[] = [];
+    
+    if (response.headers.getSetCookie) {
+      cookies = response.headers.getSetCookie();
+    } else {
+      // Fallback: manually parse Set-Cookie headers
+      const setCookieHeader = response.headers.get('set-cookie');
+      if (setCookieHeader) {
+        cookies = [setCookieHeader];
+      }
+    }
+    
+    if (cookies.length > 0) {
       res.setHeader('set-cookie', cookies);
     }
     
