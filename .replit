@@ -8,8 +8,8 @@ packages = ["nmh"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["cd", "apps/web", "&&", "npm", "run", "build"]
+run = ["cd", "apps/web", "&&", "npm", "run", "start"]
 
 [[ports]]
 localPort = 3000
@@ -20,12 +20,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 37811
+localPort = 40385
 externalPort = 5173
-
-[[ports]]
-localPort = 39093
-externalPort = 5000
 
 [[ports]]
 localPort = 42395
@@ -69,10 +65,10 @@ args = "Start application"
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd apps/web && npm run dev"
+waitForPort = 5000

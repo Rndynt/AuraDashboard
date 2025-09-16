@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -15,9 +15,9 @@ import {
   ChevronDown,
   MoreHorizontal
 } from 'lucide-react';
-import { cn } from '../utils.js';
-import type { AuthorizedUser } from '@acme/rbac/src/types.js';
-import { PERMISSIONS } from '@acme/rbac/src/permissions.js';
+import { cn } from '../utils';
+import type { AuthorizedUser } from '@acme/rbac/client';
+import { PERMISSIONS } from '@acme/rbac/client';
 
 interface SidebarProps {
   user: AuthorizedUser;

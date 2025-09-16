@@ -1,9 +1,10 @@
 'use client';
 
+import React from 'react';
 import { Bell, HelpCircle, UserPlus, ChevronRight } from 'lucide-react';
-import { cn } from '../utils.js';
-import type { AuthorizedUser } from '@acme/rbac/src/types.js';
-import { PERMISSIONS } from '@acme/rbac/src/permissions.js';
+import { cn } from '../utils';
+import type { AuthorizedUser } from '@acme/rbac/client';
+import { PERMISSIONS } from '@acme/rbac/client';
 
 interface HeaderProps {
   user: AuthorizedUser;
