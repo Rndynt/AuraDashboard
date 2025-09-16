@@ -1,11 +1,16 @@
 import { auth } from '@acme/auth/src/auth.js';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db, withTransaction } from '@acme/db/src/connection.js';
-import { tenants, auditLogs, memberships } from '@acme/db/src/schema.js';
-import { eq, count, desc } from 'drizzle-orm';
+import { db } from '@acme/db/src/connection.js';
+import { tenants } from '@acme/db/src/schema.js';
+import { eq } from 'drizzle-orm';
 import { Sidebar } from '@acme/ui/src/components/sidebar.js';
 import { Header } from '@acme/ui/src/components/header.js';
+// DDD Use Cases
+import { GetDashboardOverviewUseCase } from '../../../../../../../packages/modules/dashboard/application/use-cases/get-overview';
+import { GetUserPermissionsUseCase } from '../../../../../../../packages/modules/authorization/application/use-cases/check-permission';
+import { DashboardRepository } from '../../../../../../../packages/modules/dashboard/infrastructure/repositories/dashboard-repository';
+import { RoleRepository } from '../../../../../../../packages/modules/authorization/infrastructure/repositories/role-repository';
 import { 
   Users, 
   Activity, 
@@ -44,34 +49,43 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     redirect('/dashboard');
   }
 
-  // Get dashboard data within tenant context
-  const dashboardData = await withTransaction(async (tx) => {
-    // Get member count
-    const [memberCountResult] = await tx
-      .select({ count: count() })
-      .from(memberships)
-      .where(eq(memberships.tenantId, tenant.id));
+  // Initialize DDD repositories and use cases
+  const dashboardRepository = new DashboardRepository();
+  const roleRepository = new RoleRepository();
+  const getDashboardOverviewUseCase = new GetDashboardOverviewUseCase(dashboardRepository);
+  const getUserPermissionsUseCase = new GetUserPermissionsUseCase(roleRepository);
 
-    // Get recent audit logs
-    const recentLogs = await tx
-      .select()
-      .from(auditLogs)
-      .where(eq(auditLogs.tenantId, tenant.id))
-      .orderBy(desc(auditLogs.createdAt))
-      .limit(5);
+  // Get user permissions using DDD use case
+  const permissionsResult = await getUserPermissionsUseCase.execute({
+    userId: session.user.id,
+    tenantId: tenant.id,
+  });
 
-    return {
-      memberCount: memberCountResult.count,
-      recentLogs,
-    };
-  }, tenant.id);
+  if (!permissionsResult.isSuccess) {
+    throw new Error('Failed to load user permissions');
+  }
+
+  const userPermissions = permissionsResult.value.getKeys();
+
+  // Get dashboard data using DDD use case
+  const dashboardResult = await getDashboardOverviewUseCase.execute({
+    tenantId: tenant.id,
+    userId: session.user.id,
+    userPermissions,
+  });
+
+  if (!dashboardResult.isSuccess) {
+    throw new Error('Failed to load dashboard data');
+  }
+
+  const dashboard = dashboardResult.value;
 
   const user = {
     id: session.user.id,
     email: session.user.email,
     name: session.user.name,
     isSuperuser: session.user.isSuperuser || false,
-    permissions: [], // TODO: Load user permissions
+    permissions: userPermissions,
   };
 
   const breadcrumbs = [
@@ -88,7 +102,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
           name: tenant.name,
           slug: tenant.slug,
         }}
-        memberCount={dashboardData.memberCount}
+        memberCount={dashboard.overview.stats.totalMembers}
       />
       
       <main className="flex-1 flex flex-col overflow-hidden">
@@ -114,7 +128,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Members</p>
-                  <p className="text-2xl font-bold text-foreground">{dashboardData.memberCount}</p>
+                  <p className="text-2xl font-bold text-foreground">{dashboard.overview.stats.totalMembers}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
                   <Users className="w-6 h-6 text-blue-600" />
@@ -130,7 +144,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
-                  <p className="text-2xl font-bold text-foreground">142</p>
+                  <p className="text-2xl font-bold text-foreground">{dashboard.overview.stats.activeSessions}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
                   <Activity className="w-6 h-6 text-green-600" />
@@ -146,7 +160,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">API Requests</p>
-                  <p className="text-2xl font-bold text-foreground">1,429</p>
+                  <p className="text-2xl font-bold text-foreground">{dashboard.overview.stats.apiRequests}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
                   <Zap className="w-6 h-6 text-purple-600" />
@@ -162,7 +176,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Security Score</p>
-                  <p className="text-2xl font-bold text-foreground">98%</p>
+                  <p className="text-2xl font-bold text-foreground">{dashboard.overview.stats.securityScore}%</p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
                   <ShieldCheck className="w-6 h-6 text-green-600" />
@@ -189,22 +203,22 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
-                    {dashboardData.recentLogs.map((log) => (
-                      <div key={log.id} className="flex items-start space-x-3">
+                    {dashboard.overview.recentActivity.map((activity) => (
+                      <div key={activity.id} className="flex items-start space-x-3">
                         <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
                           <UserPlus className="w-4 h-4 text-blue-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-foreground">
-                            <span className="font-medium">{log.action}</span> on {log.resource}
+                            <span className="font-medium">{activity.actorName}</span> {activity.description}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {log.createdAt.toLocaleDateString()}
+                            {activity.timestamp.toLocaleDateString()}
                           </p>
                         </div>
                       </div>
                     ))}
-                    {dashboardData.recentLogs.length === 0 && (
+                    {dashboard.overview.recentActivity.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">
                         No recent activity to display
                       </p>
@@ -222,46 +236,37 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
+                  {dashboard.overview.onboardingProgress.steps.map((step) => (
+                    <div key={step.id} className="flex items-center space-x-3">
+                      {step.completed ? (
+                        <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white" />
+                        </div>
+                      ) : step.required ? (
+                        <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                          <span className="w-2 h-2 bg-white rounded-full"></span>
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 border-2 border-border rounded-full"></div>
+                      )}
+                      <span className={`text-sm ${step.completed ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        {step.title}
+                      </span>
                     </div>
-                    <span className="text-sm text-foreground">Create tenant account</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-sm text-foreground">Set up authentication</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-sm text-foreground">Configure roles & permissions</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                      <span className="w-2 h-2 bg-white rounded-full"></span>
-                    </div>
-                    <span className="text-sm text-muted-foreground">Invite team members</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 border-2 border-border rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Set up API keys</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-5 h-5 border-2 border-border rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Configure audit logging</span>
-                  </div>
+                  ))}
                 </div>
                 <div className="mt-6">
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium text-foreground">3/6 completed</span>
+                    <span className="font-medium text-foreground">
+                      {dashboard.overview.onboardingProgress.completed}/{dashboard.overview.onboardingProgress.total} completed
+                    </span>
                   </div>
                   <div className="w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full" style={{ width: '50%' }}></div>
+                    <div 
+                      className="bg-primary h-2 rounded-full" 
+                      style={{ width: `${dashboard.getCompletionPercentage()}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>

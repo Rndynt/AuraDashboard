@@ -85,12 +85,17 @@ export class Role {
   }
 }
 
-export interface Permission {
-  id: string;
-  key: string;
-  description: string;
-  resource: string;
-  action: string;
+export class Permission {
+  constructor(
+    public readonly key: string,
+    public readonly description: string,
+    public readonly resource: string = key.split('.')[0] || '',
+    public readonly action: string = key.split('.')[1] || ''
+  ) {}
+
+  get id(): string {
+    return this.key;
+  }
 }
 
 export class PermissionSet {
