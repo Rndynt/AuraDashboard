@@ -4,12 +4,10 @@ const nextConfig = {
     serverComponentsExternalPackages: ['better-auth', '@oslojs/crypto', '@oslojs/encoding', '@oslojs/algorithm'],
     allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
-  // Allow cross-origin requests from Replit domain
-  allowedDevOrigins: [
-    '23215867-5b23-46d9-8169-919c4f040f73-00-2204r30y6j2vz.picard.replit.dev',
-    'localhost:5000',
-    '127.0.0.1:5000'
-  ],
+  // Allow cross-origin requests in development mode - disable for Replit
+  ...(process.env.NODE_ENV === 'development' && {
+    // Don't specify allowedDevOrigins to allow all origins in dev mode
+  }),
   // Allow cross-origin requests from Replit domains in development
   ...(process.env.NODE_ENV === 'development' && {
     devIndicators: {
@@ -28,7 +26,7 @@ const nextConfig = {
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: process.env.NODE_ENV === 'development' ? 'SAMEORIGIN' : 'DENY',
           },
           {
             key: 'X-Content-Type-Options',
