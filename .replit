@@ -20,8 +20,8 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 40385
-externalPort = 5173
+localPort = 39327
+externalPort = 5000
 
 [[ports]]
 localPort = 42395
@@ -70,5 +70,5 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd apps/web && npm run dev"
+args = "npm run dev"
 waitForPort = 5000
