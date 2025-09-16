@@ -6,7 +6,7 @@ import * as schema from "../../db/src/schema";
 // Get environment variables directly
 const BETTER_AUTH_SECRET =
   process.env.BETTER_AUTH_SECRET ||
-  "6c9f8e7a5b4d3c2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e";
+  "gVoz0O+C0a5tXl16BWXU1wamB+2WoHz9F3w5fYF9ddc=";
 const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || "http://localhost:5000";
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(",") || [
   "http://localhost:5000",
