@@ -38,7 +38,7 @@ export default function AuthPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const session = await authClient.getSession();
-      if (session.data?.user) {
+      if (session.user) {
         router.push('/dashboard');
       }
     };
