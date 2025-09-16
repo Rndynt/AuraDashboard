@@ -11,7 +11,7 @@ import {
   account 
 } from './schema';
 import { isNull, eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
+import { auth } from '../../auth/src/auth';
 
 // Constants inline to avoid module resolution issues
 const PERMISSIONS = {
@@ -113,36 +113,33 @@ async function upsertUserWithPassword(email: string, name: string, password: str
       return existingUser;
     }
 
-    // Create user directly with Drizzle (database will generate UUID)
-    const [createdUser] = await db
-      .insert(user)
-      .values({
+    // Use better-auth to create user with password
+    // This ensures password hashing is compatible
+    const signUpResult = await auth.api.signUpEmail({
+      body: {
         email,
+        password,
         name,
-        emailVerified: true,
-        isSuperuser,
-        status: 'active',
-      })
-      .returning();
+      },
+    });
 
-    logger.info(`Created user: ${email} with ID: ${createdUser.id}`);
+    if (!signUpResult.user) {
+      throw new Error(`Failed to create user via better-auth: ${email}`);
+    }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    logger.info(`Created user via better-auth: ${email} with ID: ${signUpResult.user.id}`);
 
-    // Create account entry for email/password authentication
-    await db
-      .insert(account)
-      .values({
-        userId: createdUser.id,
-        accountId: email, // For email/password, accountId is typically the email
-        providerId: 'credential', // Provider ID for email/password authentication
-        password: hashedPassword,
-      })
-      .onConflictDoNothing();
+    // Update user with additional fields if needed
+    if (isSuperuser) {
+      await db
+        .update(user)
+        .set({ isSuperuser: true })
+        .where(eq(user.id, signUpResult.user.id));
+      
+      logger.info(`Updated user ${email} to superuser`);
+    }
 
-    logger.info(`Created account for user: ${email}`);
-    return createdUser;
+    return signUpResult.user;
   } catch (error) {
     logger.error(`Failed to create user ${email}:`, error);
     return null;

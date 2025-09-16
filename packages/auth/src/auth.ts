@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../../db/src/connection";
 import * as schema from "../../db/src/schema";
+import { randomUUID } from "crypto";
 
 // Get environment variables with fallback like demo
 const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || "";
@@ -29,6 +30,13 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
     // No requireEmailVerification means email verification is completely disabled
+  },
+
+  // CRITICAL: Disable Better Auth's ID generation - let database handle UUIDs
+  advanced: {
+    database: {
+      generateId: false,
+    },
   },
 
   session: {
