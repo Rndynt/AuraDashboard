@@ -1,0 +1,251 @@
+=== MASTER INSTRUCTION — MONOREPO IMPORT + DDD ENFORCEMENT (PATCH + EXECUTION PROMPT) ===
+You are an AI coding agent working in a pnpm + Turborepo monorepo:
+- apps/web (Next.js App Router)
+- packages: @acme/db, @acme/auth, @acme/ui, @acme/modules
+
+GOALS
+1) Make internal packages importable via clean subpaths (no "src/*", no ".js" suffix).
+2) Enforce Domain-Driven Design (DDD) layering:
+   - Domain: pure model + interfaces. NO imports from Application/Infrastructure.
+   - Application (use cases): may import Domain (types/interfaces) ONLY. NO imports from Infrastructure.
+   - Infrastructure (adapters/repos/clients): may import Domain (to implement its interfaces). Can import external libs.
+   - Composition happens at the edge (apps/web), where Application is wired with Infrastructure.
+3) Add barrels and proper "exports" fields.
+4) Update Next.js to transpile internal packages.
+5) Replace broken imports in apps/web.
+6) Rebuild and verify non-404 dashboard and no "Module not found".
+
+CONSTRAINTS
+- Small, safe, reviewable changes. Keep existing security (RLS/RBAC) intact.
+- If file names/paths differ slightly, search and adapt rather than fail.
+- Log changed files and report any remaining issues.
+
+--------------------------------------------------------------------------------
+PHASE 1 — APPLY PATCHES (create/modify exactly as specified)
+--------------------------------------------------------------------------------
+
+A) @acme/db — Barrel + Exports
+
+A1) Create/overwrite: packages/db/src/index.ts
+--- FILE START ---
+export { db } from "./connection";
+export * from "./schema";
+--- FILE END ---
+
+A2) Update: packages/db/package.json
+- Ensure it contains:
+  {
+    "name": "@acme/db",
+    "private": true,
+    "type": "module",
+    "exports": {
+      ".": "./src/index.ts",
+      "./schema": "./src/schema.ts",
+      "./connection": "./src/connection.ts"
+    }
+  }
+- If "exports" already exists, merge the keys above without removing other valid entries.
+
+B) @acme/modules — Barrels + Exports (DDD-ready)
+
+B1) Create/overwrite: packages/modules/index.ts
+--- FILE START ---
+export * as authorization from "./authorization";
+export * as dashboard from "./dashboard";
+--- FILE END ---
+
+B2) Create/overwrite: packages/modules/authorization/index.ts
+--- FILE START ---
+// DDD surface: export Domain types & interfaces, Application use cases,
+// and (optionally) Infrastructure concrete impl for composition at the edge.
+export * from "./domain/entities/role";
+export type * from "./domain/repositories/role-repository";
+export * from "./application/use-cases/check-permission";
+export { SqlRoleRepository } from "./infrastructure/repositories/role-repository";
+--- FILE END ---
+
+B3) Create/overwrite: packages/modules/authorization/domain/repositories/role-repository.ts
+--- FILE START ---
+import type { PermissionSet } from "../../entities/role";
+
+export interface RoleRepository {
+  // Fetch all permission keys granted to a user under a tenant.
+  getUserPermissionKeys(input: { userId: string; tenantId: string }): Promise<string[]>;
+
+  // Optional: return a richer set if your use case needs it.
+  getUserPermissionSet?(input: { userId: string; tenantId: string }): Promise<PermissionSet>;
+}
+--- FILE END ---
+
+B4) Update: packages/modules/authorization/application/use-cases/check-permission.ts
+- This file MUST depend on the Domain interface, not Infrastructure.
+- Adjust ONLY import lines as follows:
+FROM:
+  import { Role, PermissionSet } from "../domain/entities/role";
+  import { RoleRepository } from "../infrastructure/repositories/role-repository.js";
+  import { Result, success, failure, AppError } from "@acme/core.js";
+  import { logger } from "@acme/core.js";
+TO:
+  import { Role, PermissionSet } from "../../domain/entities/role";
+  import type { RoleRepository } from "../../domain/repositories/role-repository";
+  import { Result, success, failure, AppError } from "@acme/core";
+  import { logger } from "@acme/core";
+
+B5) Update/overwrite: packages/modules/authorization/infrastructure/repositories/role-repository.ts
+- Implement the Domain interface with a concrete class for real DB access.
+--- FILE START ---
+import { db } from "@acme/db/connection";
+import { memberships, roles, permissions, rolePermissions } from "@acme/db/schema";
+import type { RoleRepository } from "../../domain/repositories/role-repository";
+
+export class SqlRoleRepository implements RoleRepository {
+  async getUserPermissionKeys(input: { userId: string; tenantId: string }): Promise<string[]> {
+    const { userId, tenantId } = input;
+    // Example query; adapt to your schema if needed.
+    // Expected schema tables (adjust names/joins to match your actual schema):
+    // memberships(user_id, tenant_id, role_id)
+    // role_permissions(role_id, permission_id)
+    // permissions(id, key)
+    const rows = await db
+      .select({ key: permissions.key })
+      .from(memberships)
+      .innerJoin(roles, roles.id.eq(memberships.roleId))
+      .innerJoin(rolePermissions, rolePermissions.roleId.eq(roles.id))
+      .innerJoin(permissions, permissions.id.eq(rolePermissions.permissionId))
+      .where(memberships.userId.eq(userId).and(memberships.tenantId.eq(tenantId)));
+
+    return rows.map(r => r.key);
+  }
+}
+--- FILE END ---
+
+B6) Create/overwrite: packages/modules/dashboard/index.ts
+--- FILE START ---
+export * from "./infrastructure/repositories/dashboard-repository";
+export * from "./application/use-cases/get-overview";
+--- FILE END ---
+
+B7) Update: packages/modules/package.json
+- Ensure it contains:
+  {
+    "name": "@acme/modules",
+    "private": true,
+    "type": "module",
+    "exports": {
+      ".": "./index.ts",
+      "./authorization": "./authorization/index.ts",
+      "./authorization/*": "./authorization/*",
+      "./dashboard": "./dashboard/index.ts",
+      "./dashboard/*": "./dashboard/*"
+    }
+  }
+- Merge if needed; do not remove other valid keys.
+
+C) Next.js config — transpile internal packages
+
+C1) Update: apps/web/next.config.(ts|js)
+Ensure:
+  transpilePackages: ["@acme/ui", "@acme/auth", "@acme/db", "@acme/modules"]
+
+Example (TS):
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  transpilePackages: ["@acme/ui", "@acme/auth", "@acme/db", "@acme/modules"]
+};
+export default nextConfig;
+
+D) TypeScript resolution
+
+D1) Update: tsconfig.base.json (or root tsconfig.json)
+Ensure:
+{
+  "compilerOptions": {
+    "moduleResolution": "Bundler",
+    "baseUrl": "."
+  }
+}
+
+E) apps/web — fix imports on dashboard page (and similar pages)
+
+E1) File: apps/web/app/(app)/[tenant]/dashboard/page.tsx  (if path differs, search for the file)
+Replace import lines:
+FROM:
+  import { auth } from "@acme/auth/src/auth.js";
+  import { db } from "@acme/db/src/connection.js";
+  import { tenants } from "@acme/db/src/schema.js";
+  // deep relative imports into packages/modules/*
+TO:
+  import { auth } from "@acme/auth";
+  import { db } from "@acme/db/connection";
+  import { tenants } from "@acme/db/schema";
+  import { GetDashboardOverviewUseCase } from "@acme/modules/dashboard";
+  import { GetUserPermissionsUseCase, SqlRoleRepository } from "@acme/modules/authorization";
+
+Note (DDD): wiring is allowed here. Construct use cases by injecting Infrastructure:
+  const roleRepo = new SqlRoleRepository();
+  // pass roleRepo into the use case as required.
+
+F) Optional minimal routes (only if / or /[tenant]/dashboard 404s)
+
+F1) Create apps/web/app/page.tsx (simple landing) and apps/web/app/health/route.ts (returns 200 JSON "OK").
+
+--------------------------------------------------------------------------------
+PHASE 2 — REPO-WIDE CLEANUP, BUILD, VERIFY
+--------------------------------------------------------------------------------
+
+1) GLOBAL SEARCH & REPLACE (all workspaces):
+   - "@acme/db/src/connection"  -> "@acme/db/connection"
+   - "@acme/db/src/schema"      -> "@acme/db/schema"
+   - "@acme/auth/src/auth"      -> "@acme/auth"
+   - "@acme/auth/src/auth.js"   -> "@acme/auth"
+   - Remove trailing ".js" from TypeScript imports within the monorepo (e.g., "../x/y.js" -> "../x/y").
+   - Replace any import from apps/web to packages/modules/**/src/* with the barrels:
+       "@acme/modules/authorization" or "@acme/modules/dashboard"
+
+2) VALIDATE NEXT CONFIG
+   - apps/web/next.config.(ts|js) must contain:
+     transpilePackages: ["@acme/ui", "@acme/auth", "@acme/db", "@acme/modules"]
+
+3) VALIDATE TS RESOLUTION
+   - Root tsconfig.base.json contains: "moduleResolution": "Bundler", "baseUrl": "."
+
+4) INSTALL & BUILD
+   - Run:
+       pnpm i
+       pnpm -w build || true
+       pnpm dev
+   - If you see "Module not found" related to @acme/db or @acme/modules:
+     add the missing subpath to that package's "exports" and retry.
+
+5) DDD LAYER CHECK (quick sanity):
+   - Domain folders import NOTHING from Application/Infrastructure.
+   - Application imports Domain (types/interfaces) but NOT Infrastructure.
+   - Infrastructure imports Domain (interfaces) and external libs, OK.
+   - apps/web composes Application + Infrastructure (OK).
+   - If any violation is found, fix the import direction (prefer moving interfaces to Domain).
+
+6) RUNTIME CHECK
+   - App starts without Module Not Found.
+   - Non-404 landing (/ or a minimal /[tenant]/dashboard).
+   - If route missing, create minimal pages as described.
+
+7) REPORT (post in chat)
+   - List changed files (paths).
+   - Note any remaining unresolved imports with exact file path and subpath.
+   - Provide “Run It” snippet with commands:
+       pnpm i
+       pnpm migrate:push
+       pnpm seed
+       pnpm dev
+
+DEFINITION OF DONE
+- @acme/db exports ".", "./connection", "./schema" and they import cleanly.
+- @acme/modules exports ".", "./authorization", "./dashboard" barrels.
+- Application uses Domain interfaces; Infrastructure provides concrete classes.
+- apps/web compiles and runs; no "src/*" or ".js" suffix imports remain.
+- next.config transpiles internal packages; tsconfig uses Bundler resolution.
+
+FAILURE POLICY
+- On error, write a short root-cause note, apply a minimal fix, and retry once.
+- If the project diverges from these assumptions, list the exact file and missing export so we can extend the "exports" surface.
+=== END MASTER INSTRUCTION ===
