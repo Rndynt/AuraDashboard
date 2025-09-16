@@ -50,17 +50,23 @@ export default function AuthPage() {
     setError(null);
 
     try {
+      console.log('Login attempt:', data.email);
       const result = await authClient.signIn.email({
         email: data.email,
         password: data.password,
       });
 
-      if (result.user) {
+      console.log('Login result:', result);
+      
+      if (result.data?.user) {
+        console.log('Login success, redirecting to dashboard');
         router.push('/dashboard');
       } else {
+        console.log('Login failed - no user in result');
         setError('Invalid email or password');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Failed to sign in. Please try again.');
     } finally {
       setIsLoading(false);
@@ -78,7 +84,7 @@ export default function AuthPage() {
         name: data.name,
       });
 
-      if (result.user) {
+      if (result.data?.user) {
         router.push('/dashboard');
       } else {
         setError('Failed to create account');
