@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    serverComponentsExternalPackages: [],
+    serverComponentsExternalPackages: ['better-auth', '@oslojs/crypto', '@oslojs/encoding', '@oslojs/algorithm'],
     allowedRevalidateHeaderKeys: ['x-revalidate'],
   },
   // Allow cross-origin requests from Replit domain

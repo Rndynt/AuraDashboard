@@ -1,16 +1,29 @@
-import { redirect } from 'next/navigation';
-import { auth } from '@acme/auth';
-import { headers } from 'next/headers';
+'use client';
 
-export default async function HomePage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { authClient } from '@acme/auth/client';
 
-  if (!session?.user) {
-    redirect('/auth');
-  }
+export default function HomePage() {
+  const router = useRouter();
 
-  // Redirect to first tenant or tenant selection
-  redirect('/dashboard');
+  useEffect(() => {
+    const checkAuth = async () => {
+      const session = await authClient.getSession();
+      
+      if (!session.data?.user) {
+        router.push('/auth');
+      } else {
+        router.push('/dashboard');
+      }
+    };
+    
+    checkAuth();
+  }, [router]);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
 }

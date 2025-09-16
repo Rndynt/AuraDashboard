@@ -1,34 +1,44 @@
-import { redirect } from 'next/navigation';
-import { auth } from '@acme/auth';
-import { headers } from 'next/headers';
-import { db, memberships, tenants } from '@acme/db';
-import { eq } from 'drizzle-orm';
+'use client';
 
-export default async function DashboardRedirectPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { authClient } from '@acme/auth/client';
 
-  if (!session?.user) {
-    redirect('/auth');
+export default function DashboardRedirectPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthAndRedirect = async () => {
+      try {
+        const session = await authClient.getSession();
+        
+        if (!session.data?.user) {
+          router.push('/auth');
+          return;
+        }
+
+        // For now, just redirect to welcome page
+        // Later can add API call to fetch user's first tenant
+        router.push('/welcome');
+      } catch (error) {
+        console.error('Dashboard redirect error:', error);
+        router.push('/auth');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuthAndRedirect();
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
-  // Find user's first tenant to redirect to
-  const [userMembership] = await db
-    .select({
-      tenant: {
-        slug: tenants.slug,
-      },
-    })
-    .from(memberships)
-    .innerJoin(tenants, eq(memberships.tenantId, tenants.id))
-    .where(eq(memberships.userId, session.user.id))
-    .limit(1);
-
-  if (userMembership) {
-    redirect(`/${userMembership.tenant.slug}/dashboard`);
-  }
-
-  // If user has no tenant memberships, redirect to tenant selection or creation
-  redirect('/welcome');
+  return null;
 }
