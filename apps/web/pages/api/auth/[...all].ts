@@ -27,9 +27,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Convert Web Response back to Next.js response
     const data = await response.text();
     
-    // Copy response headers
+    // Handle Set-Cookie headers properly (multiple cookies can exist)
+    const cookies = response.headers.getSetCookie?.() || [];
+    if (cookies.length) {
+      res.setHeader('set-cookie', cookies);
+    }
+    
+    // Copy other response headers (skip 'set-cookie' as it's handled above)
     response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
+      if (key.toLowerCase() !== 'set-cookie') {
+        res.setHeader(key, value);
+      }
     });
     
     // Set status and send response
