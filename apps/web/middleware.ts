@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Temporarily bypass middleware to avoid Edge runtime issues with Better Auth
-  // This prevents the worker thread crashes while maintaining route protection
+  const { pathname } = request.nextUrl;
+  
+  // Skip middleware for public routes and API endpoints
+  if (
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon.ico') ||
+    pathname === '/auth'
+  ) {
+    return NextResponse.next();
+  }
+  
+  // For client-side routing, let the app handle authentication
+  // The homepage and auth pages will redirect based on session state
+  if (pathname === '/') {
+    return NextResponse.next();
+  }
+  
+  // For protected routes, redirect to auth if no session cookie exists
+  // Using lightweight cookie check to avoid Edge runtime issues
+  const sessionCookie = request.cookies.get('__Secure-better-auth.session_token');
+  
+  if (!sessionCookie && (pathname.startsWith('/dashboard') || pathname.includes('/acme-corp'))) {
+    return NextResponse.redirect(new URL('/auth', request.url));
+  }
+  
   return NextResponse.next();
 }
 
