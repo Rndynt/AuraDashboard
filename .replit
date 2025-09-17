@@ -8,8 +8,8 @@ packages = ["nmh"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["cd", "apps/web", "&&", "npm", "run", "build"]
+run = ["cd", "apps/web"]
 
 [[ports]]
 localPort = 3000
