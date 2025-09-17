@@ -28,7 +28,8 @@
     "@acme/db": "workspace:*",
     "@acme/auth": "workspace:*",
     "@acme/rbac": "workspace:*",
-    "@acme/ui": "workspace:*"
+    "@acme/ui": "workspace:*",
+    "@acme/modules": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
