@@ -310,6 +310,9 @@ importers:
       '@acme/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@acme/modules':
+        specifier: workspace:*
+        version: link:../../packages/modules
       '@acme/rbac':
         specifier: workspace:*
         version: link:../../packages/rbac
