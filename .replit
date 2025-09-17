@@ -8,8 +8,8 @@ packages = ["nmh"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+build = ["pnpm", "run", "build"]
+run = ["pnpm", "run", "start"]
 
 [[ports]]
 localPort = 3000
