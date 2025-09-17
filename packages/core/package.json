@@ -6,8 +6,11 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./src/errors.js": "./src/errors.ts",
-    "./src/logger.js": "./src/logger.ts"
+    "./errors": "./src/errors.ts",
+    "./logger": "./src/logger.ts",
+    "./env": "./src/env.ts",
+    "./context": "./src/context.ts",
+    "./telemetry": "./src/telemetry.ts"
   },
   "dependencies": {
     "zod": "^3.22.4",

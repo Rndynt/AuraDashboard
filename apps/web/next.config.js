@@ -14,7 +14,7 @@ const nextConfig = {
   devIndicators: process.env.NODE_ENV === 'development' ? {
     buildActivity: false,
   } : undefined,
-  transpilePackages: ['@acme/core', '@acme/db', '@acme/auth', '@acme/rbac', '@acme/ui'],
+  transpilePackages: ["@acme/ui", "@acme/auth", "@acme/db", "@acme/modules", "@acme/rbac", "@acme/core"],
   // Allow all hosts for Replit proxy
   async rewrites() {
     return []

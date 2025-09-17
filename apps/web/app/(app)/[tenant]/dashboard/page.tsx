@@ -1,16 +1,14 @@
-import { auth } from '@acme/auth/src/auth.js';
+import { auth } from '@acme/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db } from '@acme/db/src/connection.js';
-import { tenants } from '@acme/db/src/schema.js';
+import { db } from '@acme/db/connection';
+import { tenants } from '@acme/db/schema';
 import { eq } from 'drizzle-orm';
-import { Sidebar } from '@acme/ui/src/components/sidebar.js';
-import { Header } from '@acme/ui/src/components/header.js';
+import { Sidebar } from '@acme/ui/components/sidebar';
+import { Header } from '@acme/ui/components/header';
 // DDD Use Cases
-import { GetDashboardOverviewUseCase } from '../../../../../../../packages/modules/dashboard/application/use-cases/get-overview';
-import { GetUserPermissionsUseCase } from '../../../../../../../packages/modules/authorization/application/use-cases/check-permission';
-import { DashboardRepository } from '../../../../../../../packages/modules/dashboard/infrastructure/repositories/dashboard-repository';
-import { RoleRepository } from '../../../../../../../packages/modules/authorization/infrastructure/repositories/role-repository';
+import { GetDashboardOverviewUseCase, DashboardRepository } from '@acme/modules/dashboard';
+import { GetUserPermissionsUseCase, SqlRoleRepository } from '@acme/modules/authorization';
 import { 
   Users, 
   Activity, 
@@ -51,7 +49,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   // Initialize DDD repositories and use cases
   const dashboardRepository = new DashboardRepository();
-  const roleRepository = new RoleRepository();
+  const roleRepository = new SqlRoleRepository();
   const getDashboardOverviewUseCase = new GetDashboardOverviewUseCase(dashboardRepository);
   const getUserPermissionsUseCase = new GetUserPermissionsUseCase(roleRepository);
 

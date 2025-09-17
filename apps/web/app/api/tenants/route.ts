@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@acme/auth/src/auth.js';
-import { db } from '@acme/db/src/connection.js';
-import { tenants, insertTenantSchema } from '@acme/db/src/schema.js';
-import { AppError } from '@acme/core/src/errors.js';
-import { logger } from '@acme/core/src/logger.js';
+import { auth } from '@acme/auth';
+import { db } from '@acme/db/connection';
+import { tenants, insertTenantSchema } from '@acme/db/schema';
+import { AppError } from '@acme/core/errors';
+import { logger } from '@acme/core/logger';
 
 export async function GET(request: NextRequest) {
   try {

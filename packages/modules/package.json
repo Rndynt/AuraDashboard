@@ -1,0 +1,16 @@
+{
+  "name": "@acme/modules",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./authorization": "./authorization/index.ts",
+    "./authorization/*": "./authorization/*",
+    "./dashboard": "./dashboard/index.ts",
+    "./dashboard/*": "./dashboard/*"
+  },
+  "dependencies": {
+    "@acme/core": "workspace:*",
+    "@acme/db": "workspace:*"
+  }
+}

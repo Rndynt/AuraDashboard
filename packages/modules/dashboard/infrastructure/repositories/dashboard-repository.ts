@@ -1,16 +1,18 @@
-import { db, withTransaction } from '@acme/db/src/connection';
+import { db, withTransaction } from '@acme/db/connection';
 import { 
   memberships, 
   auditLogs, 
   apiKeys, 
   sessions, 
   users 
-} from '@acme/db/src/schema';
+} from '@acme/db/schema';
 import { eq, count, desc, gte, sql, and } from 'drizzle-orm';
 import { DashboardOverview, ActivityItem } from '../domain/entities/dashboard';
 import { logger } from '@acme/core';
 
-export class DashboardRepository {
+import type { DashboardRepository as IDashboardRepository } from "../../domain/repositories/dashboard-repository";
+
+export class DashboardRepository implements IDashboardRepository {
   async getDashboardOverview(tenantId: string): Promise<DashboardOverview> {
     return await withTransaction(async (tx) => {
       // Get member count

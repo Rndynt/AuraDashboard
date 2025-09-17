@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@acme/auth/src/auth.js';
-import { getUserPermissions } from '@acme/rbac/src/guards.js';
-import { PERMISSIONS } from '@acme/rbac/src/permissions.js';
-import { GetDashboardOverviewUseCase } from '../application/use-cases/get-overview.js';
-import { DashboardRepository } from '../infrastructure/repositories/dashboard-repository.js';
-import { AppError } from '@acme/core.js';
-import { logger } from '@acme/core.js';
+import { auth } from '@acme/auth';
+import { getUserPermissions } from '@acme/rbac/guards';
+import { PERMISSIONS } from '@acme/rbac/permissions';
+import { GetDashboardOverviewUseCase } from '../application/use-cases/get-overview';
+import { DashboardRepository } from '../infrastructure/repositories/dashboard-repository';
+import { AppError } from '@acme/core';
+import { logger } from '@acme/core';
 
 const dashboardRepository = new DashboardRepository();
 const getDashboardOverviewUseCase = new GetDashboardOverviewUseCase(dashboardRepository);

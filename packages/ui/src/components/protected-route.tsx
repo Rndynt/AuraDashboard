@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authClient } from '@acme/auth/src/client.js';
-import type { User } from '@acme/auth/src/auth.js';
+import { authClient } from '@acme/auth/client';
+import type { User } from '@acme/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

@@ -1,113 +1,87 @@
-import { db } from '@acme/db/src/connection';
-import { 
-  memberships, 
-  roles, 
-  permissions, 
-  rolePermissions, 
-  user 
-} from '@acme/db/src/schema';
-import { eq, inArray, and } from 'drizzle-orm';
-import { Role, Permission } from '../../domain/entities/role';
-import { logger } from '@acme/core';
+import { db } from "@acme/db/connection";
+import { memberships, roles, permissions, rolePermissions } from "@acme/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
+import type { RoleRepository } from "../../domain/repositories/role-repository";
+import { Role, Permission } from "../../domain/entities/role";
 
-export class RoleRepository {
+export class SqlRoleRepository implements RoleRepository {
+  async getUserPermissionKeys(input: { userId: string; tenantId: string }): Promise<string[]> {
+    const { userId, tenantId } = input;
+    // Query to get permission keys for a user in a tenant
+    const rows = await db
+      .select({ key: permissions.key })
+      .from(memberships)
+      .innerJoin(roles, eq(roles.id, memberships.roleId))
+      .innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+      .innerJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+      .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId)));
+
+    return rows.map(r => r.key);
+  }
+
   async getUserRoles(userId: string, tenantId: string): Promise<Role[]> {
-    try {
-      logger.debug('Fetching user roles', { userId, tenantId });
+    // Query to get all roles for a user in a tenant
+    const rows = await db
+      .select({
+        id: roles.id,
+        tenantId: roles.tenantId,
+        name: roles.name,
+        description: roles.description,
+        createdAt: roles.createdAt,
+        updatedAt: roles.updatedAt,
+        permissionKey: permissions.key
+      })
+      .from(memberships)
+      .innerJoin(roles, eq(roles.id, memberships.roleId))
+      .leftJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+      .leftJoin(permissions, eq(permissions.id, rolePermissions.permissionId))
+      .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId)));
 
-      // Get user roles with their permissions
-      const userRolesData = await db
-        .select({
-          roleId: roles.id,
-          roleName: roles.name,
-          roleDescription: roles.description,
-          roleTenantId: roles.tenantId,
-          roleCreatedAt: roles.createdAt,
-          roleUpdatedAt: roles.updatedAt,
-          permissionKey: permissions.key,
-          permissionDescription: permissions.description,
-        })
-        .from(memberships)
-        .innerJoin(roles, eq(memberships.roleId, roles.id))
-        .innerJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
-        .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
-        .where(and(eq(memberships.userId, userId), eq(memberships.tenantId, tenantId)));
+    // Group permissions by role
+    const roleMap = new Map<string, {
+      id: string;
+      tenantId: string | null;
+      name: string;
+      description: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      permissions: string[];
+    }>();
 
-      // Group permissions by role
-      const roleMap = new Map<string, {
-        id: string;
-        tenantId: string | null;
-        name: string;
-        description: string;
-        permissions: string[];
-        createdAt: Date;
-        updatedAt: Date;
-      }>();
+    rows.forEach(row => {
+      if (!roleMap.has(row.id)) {
+        roleMap.set(row.id, {
+          id: row.id,
+          tenantId: row.tenantId,
+          name: row.name,
+          description: row.description,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          permissions: []
+        });
+      }
+      
+      if (row.permissionKey) {
+        roleMap.get(row.id)!.permissions.push(row.permissionKey);
+      }
+    });
 
-      userRolesData.forEach(row => {
-        const roleKey = row.roleId;
-        if (!roleMap.has(roleKey)) {
-          roleMap.set(roleKey, {
-            id: row.roleId,
-            tenantId: row.roleTenantId,
-            name: row.roleName,
-            description: row.roleDescription || '',
-            permissions: [],
-            createdAt: row.roleCreatedAt,
-            updatedAt: row.roleUpdatedAt,
-          });
-        }
-        
-        const roleData = roleMap.get(roleKey)!;
-        roleData.permissions.push(row.permissionKey);
-      });
-
-      // Convert to Role domain entities
-      const userRoles = Array.from(roleMap.values()).map(roleData => 
-        new Role(roleData)
-      );
-
-      logger.debug('User roles fetched successfully', {
-        userId,
-        tenantId,
-        roleCount: userRoles.length,
-        totalPermissions: userRoles.reduce((acc, role) => acc + role.permissions.length, 0),
-      });
-
-      return userRoles;
-    } catch (error) {
-      logger.error('Failed to fetch user roles', error, { userId, tenantId });
-      throw error;
-    }
+    return Array.from(roleMap.values()).map(roleData => new Role(roleData));
   }
 
   async getPermissionsByKeys(permissionKeys: string[]): Promise<Permission[]> {
-    try {
-      if (permissionKeys.length === 0) return [];
-
-      logger.debug('Fetching permissions by keys', { permissionKeys });
-
-      const permissionsData = await db
-        .select({
-          key: permissions.key,
-          description: permissions.description,
-        })
-        .from(permissions)
-        .where(inArray(permissions.key, permissionKeys));
-
-      const permissionEntities = permissionsData.map(p => 
-        new Permission(p.key, p.description)
-      );
-
-      logger.debug('Permissions fetched successfully', {
-        requestedCount: permissionKeys.length,
-        foundCount: permissionEntities.length,
-      });
-
-      return permissionEntities;
-    } catch (error) {
-      logger.error('Failed to fetch permissions by keys', error, { permissionKeys });
-      throw error;
+    if (permissionKeys.length === 0) {
+      return [];
     }
+
+    const rows = await db
+      .select({
+        key: permissions.key,
+        description: permissions.description
+      })
+      .from(permissions)
+      .where(inArray(permissions.key, permissionKeys));
+
+    return rows.map(row => new Permission(row.key, row.description));
   }
 }

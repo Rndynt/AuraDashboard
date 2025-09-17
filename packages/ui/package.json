@@ -6,8 +6,11 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./src/components/sidebar.js": "./src/components/sidebar.tsx",
-    "./src/components/header.js": "./src/components/header.tsx"
+    "./components/sidebar": "./src/components/sidebar.tsx",
+    "./components/header": "./src/components/header.tsx",
+    "./components/protected-route": "./src/components/protected-route.tsx",
+    "./components/tenant-switcher": "./src/components/tenant-switcher.tsx",
+    "./utils": "./src/utils.ts"
   },
   "dependencies": {
     "react": "^18.2.0",

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, Plus, Building2, Check } from 'lucide-react';
-import { cn } from '../utils.js';
+import { cn } from '../utils';
 
 interface Tenant {
   id: string;

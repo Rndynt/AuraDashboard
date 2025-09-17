@@ -1,7 +1,7 @@
-import { AuditLog, CreateAuditLogData } from '../domain/entities/audit-log.js';
-import { AuditLogRepository } from '../infrastructure/repositories/audit-log-repository.js';
-import { Result, success, failure, AppError } from '@acme/core.js';
-import { logger } from '@acme/core.js';
+import { AuditLog, CreateAuditLogData } from '../domain/entities/audit-log';
+import { AuditLogRepository } from '../infrastructure/repositories/audit-log-repository';
+import { Result, success, failure, AppError } from '@acme/core';
+import { logger } from '@acme/core';
 
 export interface LogActionRequest extends CreateAuditLogData {
   // Extends CreateAuditLogData with any additional validation

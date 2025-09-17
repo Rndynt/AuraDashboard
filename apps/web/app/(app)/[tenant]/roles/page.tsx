@@ -1,13 +1,13 @@
-import { auth } from '@acme/auth/src/auth.js';
+import { auth } from '@acme/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db, withTransaction } from '@acme/db/src/connection.js';
-import { tenants, roles, permissions, rolePermissions } from '@acme/db/src/schema.js';
+import { db, withTransaction } from '@acme/db/connection';
+import { tenants, roles, permissions, rolePermissions } from '@acme/db/schema';
 import { eq, and, isNull, or } from 'drizzle-orm';
-import { Sidebar } from '@acme/ui/src/components/sidebar.js';
-import { Header } from '@acme/ui/src/components/header.js';
-import { getUserPermissions } from '@acme/rbac/src/guards.js';
-import { PERMISSIONS } from '@acme/rbac/src/permissions.js';
+import { Sidebar } from '@acme/ui/components/sidebar';
+import { Header } from '@acme/ui/components/header';
+import { getUserPermissions } from '@acme/rbac/guards';
+import { PERMISSIONS } from '@acme/rbac/permissions';
 import { 
   Shield, 
   Users, 

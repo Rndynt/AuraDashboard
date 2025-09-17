@@ -1,7 +1,7 @@
-import { Dashboard, DashboardOverview } from '../domain/entities/dashboard.js';
-import { DashboardRepository } from '../infrastructure/repositories/dashboard-repository.js';
-import { Result, success, failure, AppError } from '@acme/core.js';
-import { logger } from '@acme/core.js';
+import { Dashboard, DashboardOverview } from "../../domain/entities/dashboard";
+import type { DashboardRepository } from "../../domain/repositories/dashboard-repository";
+import { Result, success, failure, AppError } from "@acme/core";
+import { logger } from "@acme/core";
 
 export interface GetDashboardOverviewRequest {
   tenantId: string;

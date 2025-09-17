@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@acme/auth/src/auth.js';
-import { db, withTransaction } from '@acme/db/src/connection.js';
-import { auditLogs, users } from '@acme/db/src/schema.js';
+import { auth } from '@acme/auth';
+import { db, withTransaction } from '@acme/db/connection';
+import { auditLogs, users } from '@acme/db/schema';
 import { eq, and, desc, gte, like, sql } from 'drizzle-orm';
-import { getUserPermissions } from '@acme/rbac/src/guards.js';
-import { PERMISSIONS } from '@acme/rbac/src/permissions.js';
-import { AppError } from '@acme/core/src/errors.js';
-import { logger } from '@acme/core/src/logger.js';
+import { getUserPermissions } from '@acme/rbac/guards';
+import { PERMISSIONS } from '@acme/rbac/permissions';
+import { AppError } from '@acme/core/errors';
+import { logger } from '@acme/core/logger';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,7 +1,7 @@
-import { User } from '../domain/entities/user.js';
-import { UserRepository } from '../infrastructure/repositories/user-repository.js';
-import { Result, success, failure, AppError } from '@acme/core.js';
-import { logger } from '@acme/core.js';
+import { User } from '../domain/entities/user';
+import { UserRepository } from '../infrastructure/repositories/user-repository';
+import { Result, success, failure, AppError } from '@acme/core';
+import { logger } from '@acme/core';
 import bcrypt from 'bcrypt';
 
 export interface AuthenticateUserRequest {

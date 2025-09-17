@@ -7,8 +7,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
-    "./src/guards.js": "./src/guards.ts",
-    "./src/permissions.js": "./src/permissions.ts"
+    "./guards": "./src/guards.ts",
+    "./permissions": "./src/permissions.ts",
+    "./types": "./src/types.ts"
   },
   "dependencies": {
     "@acme/core": "workspace:*",

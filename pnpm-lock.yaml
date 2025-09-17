@@ -447,6 +447,15 @@ importers:
         specifier: ^5.6.3
         version: 5.6.3
 
+  packages/modules:
+    dependencies:
+      '@acme/core':
+        specifier: workspace:*
+        version: link:../core
+      '@acme/db':
+        specifier: workspace:*
+        version: link:../db
+
   packages/modules/audit:
     dependencies:
       '@acme/core':
