@@ -59,11 +59,11 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     tenantId: tenant.id,
   });
 
-  if (!permissionsResult.isSuccess) {
+  if (!permissionsResult.success) {
     throw new Error('Failed to load user permissions');
   }
 
-  const userPermissions = permissionsResult.value.getKeys();
+  const userPermissions = permissionsResult.data.getKeys();
 
   // Get dashboard data using DDD use case
   const dashboardResult = await getDashboardOverviewUseCase.execute({
@@ -72,11 +72,11 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
     userPermissions,
   });
 
-  if (!dashboardResult.isSuccess) {
+  if (!dashboardResult.success) {
     throw new Error('Failed to load dashboard data');
   }
 
-  const dashboard = dashboardResult.value;
+  const dashboard = dashboardResult.data;
 
   const user = {
     id: session.user.id,
