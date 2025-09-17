@@ -7,7 +7,7 @@ import {
   users 
 } from '@acme/db/schema';
 import { eq, count, desc, gte, sql, and } from 'drizzle-orm';
-import { DashboardOverview, ActivityItem } from '../domain/entities/dashboard';
+import { DashboardOverview, ActivityItem } from '../../domain/entities/dashboard';
 import { logger } from '@acme/core';
 
 import type { DashboardRepository as IDashboardRepository } from "../../domain/repositories/dashboard-repository";
